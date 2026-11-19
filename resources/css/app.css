@@ -3,7 +3,65 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * Palette from Indonesian school uniforms: SD merah, SMP biru dongker, SMA abu.
+ * Merah is the single accent (primary search button, SD tag).
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-dongker: #16213e;
+    --color-dongker-muda: #24345c;
+    --color-merah: #b42318;
+    --color-merah-tua: #8a1c14;
+    --color-abu: #5b6472;
+    --color-kertas: #f1f4f8;
+    --color-garis: #d5dce5;
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+    }
+
+    body {
+        @apply bg-white font-sans text-dongker antialiased;
+    }
+
+    /* Anchored sections land below the sticky header. */
+    [id] {
+        scroll-margin-top: 5rem;
+    }
+
+    a[href],
+    button:not(:disabled),
+    summary,
+    select,
+    label[for] {
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: not-allowed;
+    }
+
+    :focus-visible {
+        outline: 3px solid var(--color-merah);
+        outline-offset: 2px;
+    }
+
+    .on-dongker :focus-visible {
+        outline-color: #ffffff;
+    }
+
+    summary::-webkit-details-marker {
+        display: none;
+    }
 }
