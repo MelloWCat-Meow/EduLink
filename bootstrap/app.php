@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsurePeran;
+use App\Http\Middleware\EnsureStatusTutor;
+use App\Http\Middleware\LepasPenahananKedaluwarsa;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +15,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'peran' => EnsurePeran::class,
+            'status-tutor' => EnsureStatusTutor::class,
+            'lepas-penahanan' => LepasPenahananKedaluwarsa::class,
+        ]);
+
+        // The payment gateway cannot send a CSRF token; webhooks are checked by signature.
+        $middleware->validateCsrfTokens(except: ['webhooks/*']);
+
+        $middleware->redirectGuestsTo(fn (): string => route('login'));
+        $middleware->redirectUsersTo(fn (Request $request): string => route($request->user()->peran->homeRoute()));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
