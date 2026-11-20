@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\DaftarController;
 use App\Http\Controllers\Auth\SesiController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Simulasi\WebhookPembayaranController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingController::class)->name('landing');
@@ -35,3 +36,10 @@ Route::view('/daftar-tutor', 'placeholder', [
     'message' => 'Pendaftaran tutor segera hadir. Kami sedang menyiapkan alur unggah berkas dan pemeriksaannya.',
 ])->name('tutor.register');
 Route::view('/kebijakan-privasi', 'placeholder', ['title' => 'Kebijakan privasi'])->name('privacy');
+
+/*
+| Stand-ins for outside services that do not exist yet. Never registered in production.
+*/
+if (! app()->isProduction()) {
+    Route::post('/webhooks/payment', WebhookPembayaranController::class)->name('webhooks.payment');
+}

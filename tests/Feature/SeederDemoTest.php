@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\Peran;
+use App\Enums\StatusPesanan;
 use App\Models\AkunPengguna;
+use App\Models\Pesanan;
+use App\Models\Tutor;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -43,5 +46,19 @@ class SeederDemoTest extends TestCase
 
         $response->assertRedirect(route('beranda'));
         $this->assertAuthenticated();
+    }
+
+    public function test_demo_data_covers_every_order_status_and_the_verification_queue(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $statuses = Pesanan::query()->distinct()->pluck('status')->map->value->sort()->values()->all();
+        $expected = collect(StatusPesanan::cases())->map->value->sort()->values()->all();
+
+        $this->assertSame($expected, $statuses);
+        $this->assertSame(8, Tutor::query()->tampil()->count());
+        $this->assertSame(2, Tutor::query()->menungguVerifikasi()->count());
+        $this->assertTrue(Pesanan::query()->where('status', StatusPesanan::Selesai)->whereDoesntHave('ulasan')->exists());
+        $this->assertTrue(Pesanan::query()->where('status', StatusPesanan::Selesai)->whereHas('ulasan')->exists());
     }
 }

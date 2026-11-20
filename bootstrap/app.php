@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'peran' => EnsurePeran::class,
         ]);
 
+        // The payment gateway cannot send a CSRF token; webhooks are checked by signature.
+        $middleware->validateCsrfTokens(except: ['webhooks/*']);
+
         $middleware->redirectGuestsTo(fn (): string => route('login'));
         $middleware->redirectUsersTo(fn (Request $request): string => route($request->user()->peran->homeRoute()));
     })
