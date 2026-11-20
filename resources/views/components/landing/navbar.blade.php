@@ -5,6 +5,10 @@
         ['href' => '#tanya-jawab', 'label' => 'Tanya jawab'],
         ['href' => '#jadi-tutor', 'label' => 'Mau jadi tutor?'],
     ];
+
+    $account = auth()->user()
+        ? ['href' => route(auth()->user()->peran->homeRoute()), 'label' => 'Beranda saya']
+        : ['href' => route('login'), 'label' => 'Masuk'];
 @endphp
 
 <header class="halaman relative z-20 pt-4">
@@ -18,8 +22,8 @@
                 <li><a href="{{ $link['href'] }}" class="chip-mapel py-2">{{ $link['label'] }}</a></li>
             @endforeach
             <li>
-                <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center rounded-[0.6rem_0.9rem_0.5rem_1rem] border-2 border-pensil px-5 font-bold hover:bg-stabilo">
-                    Masuk
+                <a href="{{ $account['href'] }}" class="inline-flex min-h-11 items-center rounded-[0.6rem_0.9rem_0.5rem_1rem] border-2 border-pensil px-5 font-bold hover:bg-stabilo">
+                    {{ $account['label'] }}
                 </a>
             </li>
         </ul>
@@ -32,7 +36,7 @@
                 @foreach ($links as $link)
                     <li><a href="{{ $link['href'] }}" class="block px-3 py-3 font-bold">{{ $link['label'] }}</a></li>
                 @endforeach
-                <li><a href="{{ route('login') }}" class="block px-3 py-3 font-bold">Masuk</a></li>
+                <li><a href="{{ $account['href'] }}" class="block px-3 py-3 font-bold">{{ $account['label'] }}</a></li>
             </ul>
         </details>
     </nav>
