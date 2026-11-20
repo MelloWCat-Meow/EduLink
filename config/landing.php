@@ -28,7 +28,7 @@ return [
         'sd' => [
             'label' => 'SD',
             'grades' => 'Kelas 1 sampai 6',
-            'subjects' => ['Calistung', 'Matematika', 'IPAS', 'Bahasa Indonesia', 'Bahasa Inggris'],
+            'subjects' => ['Calistung', 'Matematika', 'IPA', 'IPS', 'Bahasa Indonesia', 'Bahasa Inggris'],
         ],
         'smp' => [
             'label' => 'SMP',
@@ -47,7 +47,6 @@ return [
         'Calistung',
         'Matematika',
         'IPA',
-        'IPAS',
         'IPS',
         'Fisika',
         'Kimia',
