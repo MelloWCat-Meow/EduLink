@@ -16,4 +16,16 @@ enum StatusPencairan: string
             self::Dibayar => 'Sudah dibayar',
         };
     }
+
+    /**
+     * Label colour family for <x-dasbor.label>.
+     */
+    public function tone(): string
+    {
+        return match ($this) {
+            self::Menunggu => 'tunggu',
+            self::Disetujui => 'info',
+            self::Dibayar => 'baik',
+        };
+    }
 }

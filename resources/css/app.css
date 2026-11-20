@@ -431,6 +431,137 @@
         }
     }
 
+    /*
+     * Dashboard: a working tool. Paper, highlighter and handwriting stay as
+     * accents (page titles, empty states, the to-do note); data sits on plain
+     * white sheets in the reading face.
+     */
+    .kontrol {
+        width: 100%;
+        min-height: 2.75rem;
+        border: 2px solid rgb(37 37 43 / 0.28);
+        border-radius: 0.45rem;
+        background-color: #fff;
+        padding: 0.45rem 0.7rem;
+        color: var(--color-pensil);
+        font: inherit;
+    }
+
+    .kontrol:focus-visible {
+        outline: 3px solid var(--color-tinta);
+        outline-offset: 1px;
+        border-color: var(--color-tinta);
+    }
+
+    .kontrol[aria-invalid='true'] {
+        border-color: var(--color-cap);
+        box-shadow: inset 0 -3px 0 var(--color-cap);
+    }
+
+    select.kontrol {
+        appearance: none;
+        padding-right: 2.25rem;
+        background: #fff
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2325252b' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M5 8l5 5 5-5'/%3E%3C/svg%3E")
+            no-repeat right 0.6rem center / 1rem;
+    }
+
+    textarea.kontrol {
+        min-height: 7rem;
+        line-height: 1.5;
+    }
+
+    .tombol {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.55rem 0.8rem 0.5rem 0.85rem;
+        background: var(--color-tinta);
+        padding: 0 1.15rem;
+        font-weight: 700;
+        color: #fff;
+        box-shadow: 3px 3px 0 var(--color-stabilo);
+    }
+
+    .tombol:hover {
+        background: var(--color-tinta-tua);
+    }
+
+    .tombol:active {
+        translate: 1px 1px;
+        box-shadow: 2px 2px 0 var(--color-stabilo);
+    }
+
+    .tombol-garis {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 2px solid var(--color-pensil);
+        border-radius: 0.55rem 0.8rem 0.5rem 0.85rem;
+        background: #fff;
+        padding: 0 1rem;
+        font-weight: 700;
+        color: var(--color-pensil);
+    }
+
+    .tombol-garis:hover {
+        background: var(--color-sticky);
+    }
+
+    .tombol-bahaya {
+        border-color: var(--color-cap);
+        color: var(--color-cap);
+    }
+
+    .tombol-bahaya:hover {
+        background: rgb(192 38 45 / 0.07);
+    }
+
+    .tabel {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9375rem;
+    }
+
+    .tabel th {
+        border-bottom: 2px solid var(--color-pensil);
+        padding: 0.55rem 0.75rem;
+        text-align: left;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .tabel td {
+        border-bottom: 1px solid rgb(37 37 43 / 0.12);
+        padding: 0.65rem 0.75rem;
+        vertical-align: top;
+    }
+
+    .tabel tbody tr:hover {
+        background: rgb(217 235 255 / 0.45);
+    }
+
+    .angka {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .tautan {
+        color: var(--color-tinta);
+        font-weight: 700;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+    }
+
+    .tautan:hover {
+        text-decoration-thickness: 2px;
+    }
+
     /* Horizontal snap row for the tutor cards on phones. */
     .geser {
         scroll-snap-type: x mandatory;

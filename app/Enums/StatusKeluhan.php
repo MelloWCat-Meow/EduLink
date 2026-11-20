@@ -24,4 +24,16 @@ enum StatusKeluhan: string
             self::Selesai => false,
         };
     }
+
+    /**
+     * Label colour family for <x-dasbor.label>.
+     */
+    public function tone(): string
+    {
+        return match ($this) {
+            self::Baru => 'tunggu',
+            self::Diproses => 'info',
+            self::Selesai => 'baik',
+        };
+    }
 }

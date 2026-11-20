@@ -12,4 +12,16 @@ enum StatusVerifikasi: string
     {
         return ucfirst($this->value);
     }
+
+    /**
+     * Label colour family for <x-dasbor.label>.
+     */
+    public function tone(): string
+    {
+        return match ($this) {
+            self::Menunggu => 'tunggu',
+            self::Valid => 'baik',
+            self::Ditolak => 'buruk',
+        };
+    }
 }

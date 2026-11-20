@@ -63,6 +63,16 @@ class ProfilTutor extends Model
         ]));
     }
 
+    /**
+     * "Online atau datang ke rumah", for one line of a profile card.
+     */
+    public function modesLabel(): string
+    {
+        $bagian = array_map(fn (ModeBelajar $mode): string => $mode === ModeBelajar::Online ? 'online' : 'datang ke rumah', $this->modes());
+
+        return ucfirst(implode(' atau ', $bagian));
+    }
+
     public function offers(ModeBelajar $mode): bool
     {
         return in_array($mode, $this->modes(), true);

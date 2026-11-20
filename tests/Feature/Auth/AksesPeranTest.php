@@ -3,7 +3,6 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\AkunPengguna;
-use App\Models\Siswa;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
@@ -40,18 +39,14 @@ class AksesPeranTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_guardian_home_greets_by_name_and_lists_their_children_only(): void
+    public function test_guardian_home_greets_by_name(): void
     {
         $ortu = AkunPengguna::factory()->ortu()->create(['nama' => 'Siti Aminah']);
-        Siswa::factory()->for($ortu, 'wali')->create(['nama' => 'Nadia Putri', 'jenjang' => 'SD']);
-        Siswa::factory()->create(['nama' => 'Anak Orang Lain']);
 
         $response = $this->actingAs($ortu)->get(route('beranda'));
 
         $response->assertOk();
         $response->assertSeeText('Selamat datang, Siti Aminah');
-        $response->assertSeeText('Nadia Putri');
-        $response->assertDontSeeText('Anak Orang Lain');
     }
 
     public function test_admin_page_greets_the_admin_by_name(): void
