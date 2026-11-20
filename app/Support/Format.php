@@ -65,4 +65,20 @@ class Format
     {
         return Carbon::createFromFormat('!Y-m', $periode)->locale('id')->translatedFormat('F Y');
     }
+
+    /**
+     * "312 KB" or "1,4 MB", for uploaded files.
+     */
+    public static function ukuranBerkas(?int $bytes): string
+    {
+        if ($bytes === null) {
+            return 'ukuran tidak diketahui';
+        }
+
+        if ($bytes < 1024 * 1024) {
+            return max(1, (int) round($bytes / 1024)).' KB';
+        }
+
+        return number_format($bytes / 1024 / 1024, 1, ',', '.').' MB';
+    }
 }

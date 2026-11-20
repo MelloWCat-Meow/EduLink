@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsurePeran;
+use App\Http\Middleware\EnsureStatusTutor;
 use App\Http\Middleware\LepasPenahananKedaluwarsa;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'peran' => EnsurePeran::class,
+            'status-tutor' => EnsureStatusTutor::class,
             'lepas-penahanan' => LepasPenahananKedaluwarsa::class,
         ]);
 

@@ -67,12 +67,14 @@ class Tutor extends Model
 
     /**
      * Tutors a parent may find and book: the application was approved
-     * (internal and external alike) and there is a profile to show.
+     * (internal and external alike) and the profile has a rate and a district,
+     * since a parent cannot book without either.
      */
     #[Scope]
     protected function tampil(Builder $query): void
     {
-        $query->where('status_verifikasi', StatusVerifikasiTutor::Terverifikasi)->whereHas('profil');
+        $query->where('status_verifikasi', StatusVerifikasiTutor::Terverifikasi)
+            ->whereHas('profil', fn (Builder $profil) => $profil->whereNotNull('tarif')->whereNotNull('lokasi')->where('lokasi', '!=', ''));
     }
 
     /**

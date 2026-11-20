@@ -70,11 +70,12 @@ class AksesPeranTest extends TestCase
         $response->assertRedirect(route('admin.beranda'));
     }
 
-    public function test_tutor_sign_up_is_still_a_coming_soon_page(): void
+    public function test_tutor_sign_up_opens_the_application_sheet_with_the_activation_link(): void
     {
         $response = $this->get(route('tutor.register'));
 
         $response->assertOk();
-        $response->assertSeeText('Pendaftaran tutor segera hadir.');
+        $response->assertSeeText('Lembar lamaran tutor');
+        $response->assertSee(route('tutor.aktivasi'), false);
     }
 }

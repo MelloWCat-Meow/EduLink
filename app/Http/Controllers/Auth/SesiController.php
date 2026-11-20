@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\Peran;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\MasukRequest;
+use App\Services\PendaftaranTutor;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,15 +22,24 @@ class SesiController extends Controller
     }
 
     /**
-     * Sign in and send each role to its own home page.
+     * Sign in and send each role to its own home page. A tutor goes straight
+     * to the page for their application status, never to a remembered URL.
      */
-    public function store(MasukRequest $request): RedirectResponse
+    public function store(MasukRequest $request, PendaftaranTutor $pendaftaran): RedirectResponse
     {
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route($request->user()->peran->homeRoute()));
+        $akun = $request->user();
+
+        if ($akun->hasPeran(Peran::Tutor) && $akun->tutor !== null) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->to($pendaftaran->tujuan($akun->tutor));
+        }
+
+        return redirect()->intended(route($akun->peran->homeRoute()));
     }
 
     /**

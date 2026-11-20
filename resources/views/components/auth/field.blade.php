@@ -3,6 +3,7 @@
     'label',
     'type' => 'text',
     'hint' => null,
+    'value' => null,
 ])
 
 @php
@@ -24,7 +25,7 @@
         id="{{ $id }}"
         name="{{ $name }}"
         type="{{ $type }}"
-        @if ($type !== 'password') value="{{ old($name) }}" @endif
+        @if ($type !== 'password') value="{{ old($name, $value) }}" @endif
         @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif
         @if ($hasError) aria-invalid="true" @endif
         {{ $attributes->merge(['class' => 'isian-teks mt-1']) }}

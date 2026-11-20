@@ -66,11 +66,11 @@ class MasukTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_reserved_roles_cannot_sign_in_yet(): void
+    public function test_the_reserved_student_role_cannot_sign_in_yet(): void
     {
-        AkunPengguna::factory()->create(['kontak' => 'tutor@contoh.com', 'peran' => 'tutor']);
+        AkunPengguna::factory()->create(['kontak' => 'siswa@contoh.com', 'peran' => 'siswa']);
 
-        $response = $this->post(route('login.store'), ['kontak' => 'tutor@contoh.com', 'password' => 'password']);
+        $response = $this->post(route('login.store'), ['kontak' => 'siswa@contoh.com', 'password' => 'password']);
 
         $response->assertSessionHasErrors(['kontak' => 'Akun ini belum bisa masuk lewat halaman ini.']);
         $this->assertGuest();
