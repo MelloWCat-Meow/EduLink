@@ -1,4 +1,4 @@
-@props(['pesanan', 'href'])
+@props(['pesanan', 'href', 'untukTutor' => false])
 
 {{-- One order in a list. The whole row is one link. --}}
 <li class="relative grid gap-x-6 gap-y-1 border-b border-pensil/12 py-3.5 last:border-0 sm:grid-cols-[1fr_auto] sm:items-center">
@@ -7,7 +7,11 @@
         <p class="mt-0.5 font-bold">
             <a href="{{ $href }}" class="after:absolute after:inset-0 hover:underline">{{ $pesanan->mapel->label() }} untuk {{ $pesanan->siswa->nama }}</a>
         </p>
-        <p class="text-[0.9375rem]">dengan {{ $pesanan->tutor->nama }} · {{ $pesanan->mode->label() }}</p>
+        @if ($untukTutor)
+            <p class="text-[0.9375rem]">{{ $pesanan->siswa->jenjang }} · {{ $pesanan->jadwal->label() }} · {{ $pesanan->mode->label() }}</p>
+        @else
+            <p class="text-[0.9375rem]">dengan {{ $pesanan->tutor->nama }} · {{ $pesanan->mode->label() }}</p>
+        @endif
     </div>
     <div class="flex flex-wrap items-center gap-x-4 gap-y-1 sm:flex-col sm:items-end">
         <x-dasbor.status :status="$pesanan->status" />

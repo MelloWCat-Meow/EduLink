@@ -16,7 +16,7 @@
         </x-slot:actions>
     </x-dasbor.judul>
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
         <div class="space-y-8">
             <x-dasbor.panel heading="Profil">
                 <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">

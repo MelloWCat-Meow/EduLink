@@ -6,6 +6,7 @@ use App\Enums\StatusKeluhan;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TanggapiKeluhanRequest;
 use App\Models\Keluhan;
+use App\Services\Pemberitahu;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -34,12 +35,14 @@ class KeluhanController extends Controller
         return view('admin.keluhan.show', ['keluhan' => $keluhan]);
     }
 
-    public function update(TanggapiKeluhanRequest $request, Keluhan $keluhan): RedirectResponse
+    public function update(TanggapiKeluhanRequest $request, Keluhan $keluhan, Pemberitahu $pemberitahu): RedirectResponse
     {
         $keluhan->status = StatusKeluhan::from($request->string('status')->toString());
         $keluhan->tanggapan_admin = $request->string('tanggapan_admin')->toString();
         $keluhan->save();
 
-        return redirect()->route('admin.keluhan.show', $keluhan)->with('status', 'Tanggapan tersimpan dan terlihat oleh orang tua.');
+        $pemberitahu->keluhanDiperbarui($keluhan);
+
+        return redirect()->route('admin.keluhan.show', $keluhan)->with('status', 'Tanggapan tersimpan dan terlihat oleh pengaju.');
     }
 }

@@ -22,9 +22,10 @@ use Illuminate\Notifications\Notifiable;
  * @property string $id_akun
  * @property Peran $peran
  * @property string $kontak
+ * @property string|null $no_hp
  * @property string $nama
  */
-#[Fillable(['nama', 'kontak', 'kredensial'])]
+#[Fillable(['nama', 'kontak', 'no_hp', 'kredensial'])]
 #[Hidden(['kredensial', 'remember_token'])]
 class AkunPengguna extends Authenticatable
 {
@@ -65,6 +66,16 @@ class AkunPengguna extends Authenticatable
     public function getAuthPassword(): string
     {
         return $this->kredensial;
+    }
+
+    /**
+     * Notification emails go to the sign-in email, which lives in kontak.
+     *
+     * @return array<string, string>
+     */
+    public function routeNotificationForMail(): array
+    {
+        return [$this->kontak => $this->nama];
     }
 
     public function hasPeran(Peran $peran): bool

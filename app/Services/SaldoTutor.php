@@ -10,6 +10,7 @@ use App\Models\Pembayaran;
 use App\Models\PencairanDanaTutor;
 use App\Models\Pesanan;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * A tutor's payout balance:
@@ -67,6 +68,29 @@ class SaldoTutor
         }
 
         return $hasil;
+    }
+
+    /**
+     * Per order that counts towards the balance: what the parent paid, the
+     * commission kept, and what is left for the tutor.
+     *
+     * @return Collection<int, array{pesanan: Pesanan, total: string, komisi: string, bersih: string}>
+     */
+    public function rincian(string $idTutor): Collection
+    {
+        return Pesanan::query()
+            ->where('id_tutor', $idTutor)
+            ->whereIn('status', [StatusPesanan::Dibayar, StatusPesanan::Selesai])
+            ->with(['siswa', 'mapel', 'komisi'])
+            ->withSum(['pembayaran as dibayar' => fn ($query) => $query->where('status', StatusPembayaran::Berhasil)], 'jumlah')
+            ->latest()
+            ->get()
+            ->map(function (Pesanan $pesanan): array {
+                $total = self::uang($pesanan->dibayar ?? 0);
+                $komisi = self::uang($pesanan->komisi->nominal ?? 0);
+
+                return ['pesanan' => $pesanan, 'total' => $total, 'komisi' => $komisi, 'bersih' => bcsub($total, $komisi, 2)];
+            });
     }
 
     /**

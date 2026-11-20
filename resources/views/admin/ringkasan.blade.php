@@ -36,7 +36,7 @@
         @endforeach
     </dl>
 
-    <div class="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] xl:items-start">
+    <div class="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] xl:items-start">
         <x-dasbor.panel heading="Pesanan per hari">
             <x-slot:aside><span class="text-[0.9375rem] text-pensil-muda">{{ $r['jumlah_pesanan'] }} pesanan dibuat</span></x-slot:aside>
             @if ($r['jumlah_pesanan'] === 0)

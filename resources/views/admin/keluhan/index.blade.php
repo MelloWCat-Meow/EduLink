@@ -23,7 +23,7 @@
                             <tr>
                                 <td><a href="{{ route('admin.keluhan.show', $keluhan) }}" class="tautan angka">{{ $keluhan->id_keluhan }}</a></td>
                                 <td class="whitespace-nowrap">{{ Format::tanggalPendek($keluhan->created_at) }}</td>
-                                <td>{{ $keluhan->pengaju->nama }}</td>
+                                <td>{{ $keluhan->pengaju->nama }} <x-dasbor.label :tone="$keluhan->pengaju->peran === \App\Enums\Peran::Tutor ? 'info' : 'netral'" class="ml-1">{{ $keluhan->pengaju->peran->label() }}</x-dasbor.label></td>
                                 <td>{{ $keluhan->jenis->label() }}</td>
                                 <td class="whitespace-nowrap"><a href="{{ route('admin.pesanan.show', $keluhan->id_pesanan) }}" class="tautan angka">{{ $keluhan->id_pesanan }}</a><span class="block text-[0.8125rem] text-pensil-muda">{{ $keluhan->pesanan->tutor->nama }}</span></td>
                                 <td><x-dasbor.label :tone="$keluhan->status->tone()">{{ $keluhan->status->label() }}</x-dasbor.label></td>

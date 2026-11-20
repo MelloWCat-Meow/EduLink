@@ -6,7 +6,7 @@
         <x-slot:actions><x-dasbor.status :status="$pesanan->status" class="text-[1rem]" /></x-slot:actions>
     </x-dasbor.judul>
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
         <div class="space-y-8">
             <x-dasbor.panel heading="Rincian dan biaya">
                 <x-dasbor.rincian-pesanan :pesanan="$pesanan" />
@@ -133,6 +133,15 @@
         </div>
 
         <div class="space-y-8">
+            <x-dasbor.panel heading="Tutor">
+                <p class="font-bold">{{ $pesanan->tutor->nama }}</p>
+                <p class="text-[0.9375rem] text-pensil-muda">{{ $pesanan->mapel->label() }} · {{ $pesanan->mode->label() }}</p>
+                @if ($pesanan->mode === \App\Enums\ModeBelajar::KunjunganRumah && $kontak['tautan'])
+                    <p class="mt-3 text-[0.9375rem]">Alamat rumah tidak disimpan di EduLink. Kirim alamat ke tutor lewat WhatsApp.</p>
+                @endif
+                <x-dasbor.tombol-whatsapp :kontak="$kontak" class="mt-4" />
+            </x-dasbor.panel>
+
             @if ($pesanan->status->holdsSlot())
                 <x-dasbor.panel heading="Batalkan pesanan">
                     <p class="text-[0.9375rem]">Pesanan yang belum dibayar boleh dibatalkan. Jadwal tutor akan dilepas untuk orang tua lain.</p>

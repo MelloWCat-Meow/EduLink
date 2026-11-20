@@ -5,7 +5,7 @@
 <x-dynamic-component :component="$layout" title="Cari tutor">
     <x-dasbor.judul title="Cari tutor" note="hanya tutor internal dan tutor yang berkasnya sudah diperiksa" />
 
-    <div class="grid gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
         <x-dasbor.panel heading="Saring">
             <form method="get" action="{{ route('tutor.index') }}" class="space-y-4">
                 <x-dasbor.field name="mapel" label="Mapel">

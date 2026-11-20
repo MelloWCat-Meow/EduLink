@@ -40,7 +40,8 @@ class SimulasiSesi extends Command
         }
 
         try {
-            $alurPesanan->catatKehadiran($sesi, $kehadiran, $this->option('catatan'));
+            // Demo shortcut: unlike the tutor dashboard, this may log a session that has not started yet.
+            $alurPesanan->catatKehadiran($sesi, $kehadiran, $this->option('catatan'), periksaWaktu: false);
         } catch (TransisiStatusTidakSah $e) {
             $this->components->error($e->getMessage());
 

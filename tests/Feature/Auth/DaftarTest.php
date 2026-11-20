@@ -26,6 +26,7 @@ class DaftarTest extends TestCase
         $response = $this->post(route('register.store'), [
             'nama' => 'Rina Marlina',
             'kontak' => 'Rina@Contoh.com',
+            'no_hp' => '0812 3456 7890',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia123',
         ]);
@@ -37,6 +38,19 @@ class DaftarTest extends TestCase
         $this->assertSame(Peran::Ortu, $akun->peran);
         $this->assertSame('rina@contoh.com', $akun->kontak);
         $this->assertTrue(Hash::check('rahasia123', $akun->kredensial));
+        $this->assertSame('081234567890', $akun->no_hp);
+    }
+
+    public function test_sign_up_requires_an_indonesian_phone_number(): void
+    {
+        $isian = ['nama' => 'Rina Marlina', 'kontak' => 'rina@contoh.com', 'password' => 'rahasia123', 'password_confirmation' => 'rahasia123'];
+
+        $this->post(route('register.store'), $isian)->assertSessionHasErrors(['no_hp' => 'Nomor HP belum diisi.']);
+        $this->post(route('register.store'), $isian + ['no_hp' => '12345'])->assertSessionHasErrors(['no_hp' => 'Tulis nomor HP Indonesia, misalnya 0812 3456 7890.']);
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('akun_pengguna', 0);
+        $this->get(route('register'))->assertSee('name="no_hp"', false);
     }
 
     public function test_new_account_id_continues_after_the_highest_existing_id(): void
@@ -47,6 +61,7 @@ class DaftarTest extends TestCase
         $this->post(route('register.store'), [
             'nama' => 'Rina Marlina',
             'kontak' => 'rina@contoh.com',
+            'no_hp' => '0812 3456 7890',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia123',
         ]);
@@ -59,6 +74,7 @@ class DaftarTest extends TestCase
         $this->post(route('register.store'), [
             'nama' => 'Coba Admin',
             'kontak' => 'coba@contoh.com',
+            'no_hp' => '0812 3456 7890',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia123',
             'peran' => 'admin',
@@ -104,6 +120,7 @@ class DaftarTest extends TestCase
         $response = $this->post(route('register.store'), [
             'nama' => 'Rina Lain',
             'kontak' => 'RINA@contoh.com',
+            'no_hp' => '0812 3456 7890',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia123',
         ]);

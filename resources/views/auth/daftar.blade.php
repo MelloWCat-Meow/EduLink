@@ -27,6 +27,7 @@
 
             <x-auth.field name="nama" label="Nama lengkap" autocomplete="name" required autofocus maxlength="100" />
             <x-auth.field name="kontak" label="Email" type="email" autocomplete="email" inputmode="email" required maxlength="50" hint="Dipakai untuk masuk dan menerima kabar pesanan." />
+            <x-auth.field name="no_hp" label="Nomor HP (WhatsApp)" type="tel" autocomplete="tel" inputmode="tel" required maxlength="20" hint="Tutor bisa menghubungi Anda lewat WhatsApp setelah pesanan dibayar." />
             <x-auth.field name="password" label="Kata sandi" type="password" autocomplete="new-password" required minlength="8" hint="Minimal 8 karakter." />
             <x-auth.field name="password_confirmation" label="Ulangi kata sandi" type="password" autocomplete="new-password" required minlength="8" />
 

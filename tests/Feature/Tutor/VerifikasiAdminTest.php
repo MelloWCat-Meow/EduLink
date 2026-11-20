@@ -3,21 +3,19 @@
 namespace Tests\Feature\Tutor;
 
 use App\Enums\JenisDokumen;
+use App\Enums\JenisNotifikasi;
 use App\Enums\LangkahPendaftaran;
 use App\Enums\StatusTutor;
 use App\Enums\StatusVerifikasi;
 use App\Enums\StatusVerifikasiTutor;
-use App\Jobs\SinkronTutorKeEduManage;
 use App\Mail\KeputusanVerifikasiTutor;
 use App\Models\AkunPengguna;
 use App\Models\Tutor;
+use App\Notifications\Pemberitahuan;
 use App\Services\PendaftaranTutor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
-use Mockery;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\Concerns\MembuatPendaftar;
 use Tests\TestCase;
@@ -33,8 +31,7 @@ class VerifikasiAdminTest extends TestCase
         parent::setUp();
 
         Storage::fake('local');
-        Mail::fake();
-        Queue::fake();
+        Notification::fake();
 
         $this->admin = AkunPengguna::factory()->admin()->create(['nama' => 'Dewi Lestari']);
     }
@@ -81,7 +78,7 @@ class VerifikasiAdminTest extends TestCase
             ->assertSeeText('Dikirim tutor');
     }
 
-    public function test_approving_validates_documents_lists_the_tutor_records_the_decision_emails_and_syncs(): void
+    public function test_approving_validates_documents_lists_the_tutor_records_the_decision_and_emails(): void
     {
         $tutor = $this->pendaftarMenunggu();
         $this->assertFalse($tutor->isListed());
@@ -94,23 +91,7 @@ class VerifikasiAdminTest extends TestCase
         $this->assertTrue($tutor->isListed());
         $this->get(route('tutor.index'))->assertSeeText($tutor->nama);
         $this->assertDatabaseHas('riwayat_verifikasi_tutor', ['id_tutor' => $tutor->id_tutor, 'status' => 'terverifikasi', 'id_akun' => $this->admin->id_akun]);
-        Mail::assertSent(KeputusanVerifikasiTutor::class, fn ($mail) => $mail->hasTo($tutor->kontak) && $mail->keputusan === StatusVerifikasiTutor::Terverifikasi);
-        Queue::assertPushed(SinkronTutorKeEduManage::class, fn ($job) => $job->idTutor === $tutor->id_tutor);
-    }
-
-    public function test_sync_job_writes_the_tutor_payload_to_the_edumanage_log(): void
-    {
-        $tutor = $this->pendaftarLengkap();
-        $kodeMapel = $tutor->mataPelajaran()->pluck('mata_pelajaran.kode_mapel')->all();
-
-        Log::shouldReceive('channel')->once()->with('edumanage')->andReturnSelf();
-        Log::shouldReceive('info')->once()->with('Sinkron tutor ke EduManage', Mockery::on(fn (array $payload): bool => $payload['id_tutor'] === $tutor->id_tutor
-            && $payload['nama'] === $tutor->nama
-            && $payload['kontak'] === $tutor->kontak
-            && $payload['status'] === 'eksternal'
-            && $payload['mapel'] === $kodeMapel));
-
-        (new SinkronTutorKeEduManage($tutor->id_tutor))->handle();
+        $this->assertKeputusanTerkirim($tutor, StatusVerifikasiTutor::Terverifikasi);
     }
 
     public function test_requesting_corrections_flags_sections_and_documents_then_the_tutor_fixes_and_resends(): void
@@ -135,7 +116,7 @@ class VerifikasiAdminTest extends TestCase
         $this->assertSame('Foto KTP buram.', $ktp->alasan_penolakan);
         $this->assertSame(StatusVerifikasi::Valid, $ijazah->refresh()->status_verifikasi);
         $this->assertDatabaseHas('riwayat_verifikasi_tutor', ['id_tutor' => $tutor->id_tutor, 'status' => 'perlu_perbaikan', 'id_akun' => $this->admin->id_akun]);
-        Mail::assertSent(KeputusanVerifikasiTutor::class, fn ($mail) => $mail->keputusan === StatusVerifikasiTutor::PerluPerbaikan);
+        $this->assertKeputusanTerkirim($tutor, StatusVerifikasiTutor::PerluPerbaikan);
 
         // The tutor sees the red correction and cannot resend before fixing.
         $this->post(route('logout'));
@@ -170,7 +151,7 @@ class VerifikasiAdminTest extends TestCase
             ->assertSessionHasErrors("alasan_dokumen.{$ktp->id_dokumen}");
 
         $this->assertSame(StatusVerifikasiTutor::Menunggu, $tutor->refresh()->status_verifikasi);
-        Mail::assertNothingSent();
+        Notification::assertNothingSentTo($tutor->akun);
     }
 
     public function test_rejecting_needs_a_reason_is_final_and_is_emailed(): void
@@ -187,8 +168,7 @@ class VerifikasiAdminTest extends TestCase
         $this->assertSame(StatusVerifikasiTutor::Ditolak, $tutor->status_verifikasi);
         $this->assertSame('Ijazah tidak sesuai mapel yang dipilih.', $tutor->catatan_verifikasi);
         $this->assertFalse($tutor->isListed());
-        Mail::assertSent(KeputusanVerifikasiTutor::class, fn ($mail) => $mail->keputusan === StatusVerifikasiTutor::Ditolak);
-        Queue::assertNothingPushed();
+        $this->assertKeputusanTerkirim($tutor, StatusVerifikasiTutor::Ditolak);
 
         $this->post(route('logout'));
         $this->actingAs($tutor->akun)->post(route('tutor.pendaftaran.kirim'))->assertRedirect(route('tutor.status'));
@@ -204,7 +184,6 @@ class VerifikasiAdminTest extends TestCase
             ->assertSessionHas('galat');
 
         $this->assertSame(StatusVerifikasiTutor::Draf, $tutor->refresh()->status_verifikasi);
-        Queue::assertNothingPushed();
     }
 
     #[TestWith(['tarif'])]
@@ -219,5 +198,22 @@ class VerifikasiAdminTest extends TestCase
         $this->get(route('tutor.show', $kosong))->assertNotFound();
         $this->assertFalse($kosong->isListed());
         $this->assertTrue($lengkap->isListed());
+    }
+
+    /**
+     * The decision reaches the tutor as an in-app notification whose email is
+     * the decision email, sent to the tutor's sign-in address.
+     */
+    private function assertKeputusanTerkirim(Tutor $tutor, StatusVerifikasiTutor $keputusan): void
+    {
+        Notification::assertSentTo($tutor->akun, Pemberitahuan::class, function (Pemberitahuan $pemberitahuan, array $channels) use ($tutor, $keputusan): bool {
+            $email = $pemberitahuan->toMail($tutor->akun);
+
+            return $pemberitahuan->jenis === JenisNotifikasi::KeputusanVerifikasi
+                && $channels === ['database', 'mail']
+                && $email instanceof KeputusanVerifikasiTutor
+                && $email->keputusan === $keputusan
+                && $email->hasTo($tutor->akun->kontak);
+        });
     }
 }

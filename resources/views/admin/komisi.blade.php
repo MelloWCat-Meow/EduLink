@@ -3,7 +3,7 @@
 <x-dasbor.layout title="Komisi">
     <x-dasbor.judul title="Komisi platform" note="berlaku untuk pesanan yang dibayar setelah diubah" />
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start">
         <x-dasbor.panel heading="Persentase sekarang">
             <p class="font-display text-[3rem] leading-none font-extrabold"><span class="stabilo">{{ $persenSekarang }}%</span></p>
             <p class="mt-2 text-[0.9375rem] text-pensil-muda">{{ $diubahPada ? 'Terakhir diubah '.Format::waktu($diubahPada) : 'Nilai bawaan, belum pernah diubah.' }}</p>

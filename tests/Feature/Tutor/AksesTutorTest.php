@@ -79,9 +79,9 @@ class AksesTutorTest extends TestCase
         $this->get(route('tutor.area'))
             ->assertOk()
             ->assertSeeText('Selamat datang, Rina Marlina')
-            ->assertSeeText('Aktif · terverifikasi')
+            ->assertSeeText('Yang perlu Anda lakukan')
             ->assertSee(route('tutor.show', $tutor), false)
-            ->assertSeeText('Dashboard tutor segera hadir');
+            ->assertSee(route('tutor.pesanan.index'), false);
     }
 
     public function test_tutor_is_sent_to_their_own_page_instead_of_a_remembered_url(): void

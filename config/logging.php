@@ -65,15 +65,6 @@ return [
             'replace_placeholders' => true,
         ],
 
-        // Integration point for the company's internal system (EduManage), which
-        // does not exist yet: SinkronTutorKeEduManage writes its payload here.
-        'edumanage' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/edumanage.log'),
-            'level' => 'info',
-            'replace_placeholders' => true,
-        ],
-
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

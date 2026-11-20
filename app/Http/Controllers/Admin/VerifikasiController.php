@@ -56,7 +56,7 @@ class VerifikasiController extends Controller
         $this->verifikasi->setujui($tutor, $request->user());
 
         return redirect()->route('admin.verifikasi.index')
-            ->with('status', "Pendaftaran {$tutor->nama} disetujui. Profilnya sekarang muncul di pencarian dan data dikirim ke EduManage.");
+            ->with('status', "Pendaftaran {$tutor->nama} disetujui. Profilnya sekarang muncul di pencarian.");
     }
 
     public function perbaikan(PerbaikanRequest $request, Tutor $tutor): RedirectResponse

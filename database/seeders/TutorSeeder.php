@@ -66,7 +66,7 @@ class TutorSeeder extends Seeder
                 'pendidikan' => ['pendidikan' => 'S1', 'institusi' => 'UIN Sulthan Thaha Saifuddin Jambi', 'jurusan' => 'Sastra Inggris'],
                 'kompetensi' => 'S1 Sastra Inggris, sertifikat TOEFL ITP 610. Latihan percakapan dan tata bahasa untuk ujian sekolah.',
                 'pengalaman' => 'Lima tahun mengajar daring untuk siswa SMP dan SMA di seluruh Kota Jambi.',
-                'jadwal' => [['selasa', '16:00'], ['jumat', '19:00']],
+                'jadwal' => [['selasa', '16:00'], ['jumat', '19:00'], ['sabtu', '10:00']],
             ],
             [
                 'nama' => 'Yusuf Hidayat', 'status' => StatusTutor::Internal, 'kontak' => 'yusuf.hidayat@edulink.test', 'no_hp' => '081266100205',
@@ -160,9 +160,28 @@ class TutorSeeder extends Seeder
             }
         }
 
+        $this->isiRekening();
         $this->tutorInternalBelumAktif();
         $this->pendaftarPerluPerbaikan($admin);
         $this->pendaftarDraf();
+    }
+
+    /**
+     * Payout accounts for the verified external tutors who sign in for the demo.
+     */
+    private function isiRekening(): void
+    {
+        $rekening = [
+            'rina.marlina@edulink.test' => ['BRI', '0123456789014417', 'Rina Marlina'],
+            'andi.pratama@edulink.test' => ['BNI', '0987654321', 'Andi Pratama'],
+            'dewi.anggraini@edulink.test' => ['Bank Jambi', '2001300456', 'Dewi Anggraini'],
+        ];
+
+        foreach ($rekening as $kontak => [$bank, $nomor, $atasNama]) {
+            Tutor::query()->where('kontak', $kontak)->firstOrFail()
+                ->forceFill(['rekening_bank' => $bank, 'rekening_nomor' => $nomor, 'rekening_atas_nama' => $atasNama])
+                ->save();
+        }
     }
 
     /**
@@ -274,6 +293,7 @@ class TutorSeeder extends Seeder
             $akun = AkunPengguna::forceCreate([
                 'nama' => $data['nama'],
                 'kontak' => $data['kontak'],
+                'no_hp' => $data['no_hp'],
                 'peran' => Peran::Tutor,
                 'kredensial' => self::KATA_SANDI,
             ]);

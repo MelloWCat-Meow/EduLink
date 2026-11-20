@@ -17,7 +17,7 @@
         </x-slot:actions>
     </x-dasbor.judul>
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
         <div class="space-y-8">
             <x-dasbor.panel heading="Data diri">
                 <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-3">
@@ -127,7 +127,7 @@
                 <form method="post" action="{{ route('admin.verifikasi.setujui', $tutor) }}">
                     @csrf
                     <h3 class="font-display text-[1.1rem] font-extrabold">Setujui</h3>
-                    <p class="text-[0.9375rem]">Semua dokumen ditandai valid, profil {{ $tutor->nama }} tampil di pencarian, dan datanya dikirim ke EduManage.</p>
+                    <p class="text-[0.9375rem]">Semua dokumen ditandai valid dan profil {{ $tutor->nama }} langsung tampil di pencarian.</p>
                     <button type="submit" class="tombol mt-3">Setujui pendaftaran</button>
                 </form>
 

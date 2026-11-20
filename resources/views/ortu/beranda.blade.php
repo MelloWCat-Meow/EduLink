@@ -3,9 +3,16 @@
 <x-dasbor.layout title="Beranda">
     <x-dasbor.judul :title="'Selamat datang, '.$akun->nama" note="ringkasan les anak-anak Anda" />
 
+    @if (blank($akun->no_hp))
+        <p role="note" class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-l-4 border-cap bg-jambu/50 px-4 py-3">
+            <span><span class="font-bold">Nomor HP belum diisi.</span> Tanpa nomor HP, tutor tidak bisa menghubungi Anda lewat WhatsApp setelah pesanan dibayar.</span>
+            <a href="{{ route('akun.edit') }}" class="tombol-garis min-h-10">Isi nomor HP</a>
+        </p>
+    @endif
+
     @php($adaTugas = $menungguBayar->isNotEmpty() || $sesiTerdekat || $belumDiulas->isNotEmpty() || $jumlahAnak === 0)
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
         {{-- The to-do list is the one sticky note on the page. --}}
         <section aria-labelledby="perlu-dilakukan" class="selotip relative rotate-[-0.5deg] bg-sticky px-5 pt-6 pb-5 shadow-[0_16px_28px_-20px_rgb(0_0_0/0.45)] sm:px-6">
             <h2 id="perlu-dilakukan" class="font-tangan text-[1.6rem] leading-tight font-bold text-tinta">Yang perlu Anda lakukan</h2>

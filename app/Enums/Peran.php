@@ -16,6 +16,16 @@ enum Peran: string
     /**
      * Name of the route each role lands on after signing in.
      */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Ortu => 'Orang tua',
+            self::Siswa => 'Siswa',
+            self::Tutor => 'Tutor',
+            self::Admin => 'Admin',
+        };
+    }
+
     public function homeRoute(): string
     {
         return match ($this) {

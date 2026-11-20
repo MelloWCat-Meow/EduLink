@@ -1,7 +1,7 @@
 <x-dasbor.layout title="Data anak">
     <x-dasbor.judul title="Data anak" note="kontak wali diisi otomatis dari email akun Anda" />
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
         <x-dasbor.panel heading="Anak yang terdaftar">
             @if ($daftarAnak->isEmpty())
                 <x-dasbor.kosong message="Belum ada data anak. Tambahkan lewat formulir di samping." />

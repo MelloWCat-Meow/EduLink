@@ -11,14 +11,14 @@
             <div class="overflow-x-auto">
                 <table class="tabel">
                     <thead>
-                        <tr><th scope="col">Nomor</th><th scope="col">Tutor</th><th scope="col">Periode</th><th scope="col" class="text-right">Diajukan</th><th scope="col" class="text-right">Saldo tutor</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Aksi</span></th></tr>
+                        <tr><th scope="col">Nomor</th><th scope="col">Tutor dan rekening</th><th scope="col">Periode</th><th scope="col" class="text-right">Diajukan</th><th scope="col" class="text-right">Saldo tutor</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Aksi</span></th></tr>
                     </thead>
                     <tbody>
                         @foreach ($daftarPencairan as $pencairan)
                             @php($s = $saldo[$pencairan->id_tutor])
                             <tr>
                                 <td class="angka">{{ $pencairan->id_pencairan }}<span class="block text-[0.8125rem] text-pensil-muda">{{ Format::tanggalPendek($pencairan->created_at) }}</span></td>
-                                <td>{{ $pencairan->tutor->nama }}</td>
+                                <td>{{ $pencairan->tutor->nama }}<span class="block text-[0.8125rem] text-pensil-muda">@if ($pencairan->tutor->punyaRekening()){{ $pencairan->tutor->rekening_bank }} <span class="angka">{{ $pencairan->tutor->rekening_nomor }}</span> a.n. {{ $pencairan->tutor->rekening_atas_nama }}@else Rekening belum diisi @endif</span></td>
                                 <td class="whitespace-nowrap">{{ Format::periode($pencairan->periode) }}</td>
                                 <td class="angka text-right font-bold">{{ Format::rupiah($pencairan->nominal) }}</td>
                                 <td class="angka text-right">

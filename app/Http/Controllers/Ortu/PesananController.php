@@ -8,6 +8,7 @@ use App\Enums\StatusPesanan;
 use App\Http\Controllers\Controller;
 use App\Models\Pesanan;
 use App\Services\AlurPesanan;
+use App\Services\KontakWhatsApp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -29,7 +30,7 @@ class PesananController extends Controller
         return view('ortu.pesanan.index', ['daftarPesanan' => $daftarPesanan, 'statusDipilih' => $status]);
     }
 
-    public function show(Pesanan $pesanan): View
+    public function show(Request $request, Pesanan $pesanan, KontakWhatsApp $kontakWhatsApp): View
     {
         $pesanan->load([
             'siswa', 'tutor', 'mapel', 'jadwal', 'komisi', 'ulasan',
@@ -43,6 +44,7 @@ class PesananController extends Controller
             'pesanan' => $pesanan,
             'pilihanMetode' => MetodePembayaran::cases(),
             'pilihanKeluhan' => JenisKeluhan::cases(),
+            'kontak' => $kontakWhatsApp->untuk($request->user(), $pesanan),
         ]);
     }
 

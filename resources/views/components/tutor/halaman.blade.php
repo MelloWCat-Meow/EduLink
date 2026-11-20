@@ -12,6 +12,7 @@
             </a>
             @auth
                 <div class="flex items-center gap-3">
+                    <x-dasbor.lonceng />
                     <p class="hidden text-[0.9375rem] sm:block"><span class="font-bold">{{ auth()->user()->nama }}</span> · {{ auth()->user()->id_akun }}</p>
                     <x-auth.sign-out />
                 </div>

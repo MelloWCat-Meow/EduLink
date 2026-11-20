@@ -69,7 +69,7 @@ class LandingPageTest extends TestCase
     {
         $response = $this->get(route('landing'));
 
-        foreach (['EduManage', 'API', 'SSO', 'TOGAF', 'komisi'] as $internalTerm) {
+        foreach (['API', 'SSO', 'TOGAF', 'komisi'] as $internalTerm) {
             $response->assertDontSeeText($internalTerm);
         }
     }
