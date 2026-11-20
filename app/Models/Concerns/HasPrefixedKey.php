@@ -13,14 +13,17 @@ use Illuminate\Database\Eloquent\Model;
 trait HasPrefixedKey
 {
     /**
-     * Digits after the prefix; the sequence keeps counting past 9999.
-     */
-    protected int $keyDigits = 4;
-
-    /**
      * The fixed text in front of every key, e.g. "AK".
      */
     abstract public function keyPrefix(): string;
+
+    /**
+     * Digits after the prefix; the sequence keeps counting past the last padded number.
+     */
+    public function keyDigits(): int
+    {
+        return 4;
+    }
 
     public static function bootHasPrefixedKey(): void
     {
@@ -49,6 +52,6 @@ trait HasPrefixedKey
 
         $nextNumber = $lastKey === null ? 1 : ((int) substr($lastKey, strlen($prefix))) + 1;
 
-        return $prefix.str_pad((string) $nextNumber, $this->keyDigits, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $nextNumber, $this->keyDigits(), '0', STR_PAD_LEFT);
     }
 }

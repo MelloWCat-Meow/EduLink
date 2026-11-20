@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -78,5 +79,25 @@ class AkunPengguna extends Authenticatable
     public function siswa(): HasMany
     {
         return $this->hasMany(Siswa::class, 'id_akun', 'id_akun');
+    }
+
+    /**
+     * Complaints filed by this account.
+     *
+     * @return HasMany<Keluhan, $this>
+     */
+    public function keluhan(): HasMany
+    {
+        return $this->hasMany(Keluhan::class, 'id_akun', 'id_akun');
+    }
+
+    /**
+     * The tutor record linked to this account, for tutor accounts.
+     *
+     * @return HasOne<Tutor, $this>
+     */
+    public function tutor(): HasOne
+    {
+        return $this->hasOne(Tutor::class, 'id_akun', 'id_akun');
     }
 }

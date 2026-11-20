@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A student (Siswa) registered under a guardian account.
@@ -45,5 +46,13 @@ class Siswa extends Model
     public function wali(): BelongsTo
     {
         return $this->belongsTo(AkunPengguna::class, 'id_akun', 'id_akun');
+    }
+
+    /**
+     * @return HasMany<Pesanan, $this>
+     */
+    public function pesanan(): HasMany
+    {
+        return $this->hasMany(Pesanan::class, 'id_siswa', 'id_siswa');
     }
 }
