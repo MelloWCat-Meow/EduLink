@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Cancel orders whose tutor-reply or payment deadline has passed and free their slots.
+Schedule::command('edulink:lepas-penahanan')->everyMinute()->withoutOverlapping();
+
+// Day-before reminders for tomorrow's sessions, to parents and tutors. Safe to run more than once.
+Schedule::command('edulink:pengingat-sesi')->dailyAt('07:00')->withoutOverlapping();
