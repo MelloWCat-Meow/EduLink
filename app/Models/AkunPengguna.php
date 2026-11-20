@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -99,5 +100,15 @@ class AkunPengguna extends Authenticatable
     public function tutor(): HasOne
     {
         return $this->hasOne(Tutor::class, 'id_akun', 'id_akun');
+    }
+
+    /**
+     * Orders placed for this guardian's children.
+     *
+     * @return HasManyThrough<Pesanan, Siswa, $this>
+     */
+    public function pesanan(): HasManyThrough
+    {
+        return $this->hasManyThrough(Pesanan::class, Siswa::class, 'id_akun', 'id_siswa', 'id_akun', 'id_siswa');
     }
 }
