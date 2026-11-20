@@ -9,20 +9,14 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="{{ $description }}">
+        <meta name="theme-color" content="#fdfdf9">
 
-        <title>{{ $title ? $title.' | EduLink Tutor' : 'EduLink Tutor' }}</title>
-
-        @fonts
+        <title>{{ $title ? $title.' | EduLink Tutor' : 'EduLink Tutor: guru les privat di Kota Jambi' }}</title>
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen">
-        <a
-            href="#konten"
-            class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-dongker focus:px-4 focus:py-3 focus:text-white"
-        >
-            Lewati ke konten utama
-        </a>
+    <body>
+        <a href="#konten" class="lewati">Lewati ke konten utama</a>
 
         {{ $slot }}
     </body>
