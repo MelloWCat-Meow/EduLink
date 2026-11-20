@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\VerifikasiController;
 use App\Http\Controllers\Auth\DaftarController;
 use App\Http\Controllers\Auth\SesiController;
 use App\Http\Controllers\BerandaController;
+use App\Http\Controllers\BerkasDokumenController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Ortu\AnakController;
 use App\Http\Controllers\Ortu\BayarController;
@@ -21,6 +22,12 @@ use App\Http\Controllers\Ortu\PesanTutorController;
 use App\Http\Controllers\Ortu\UlasanController;
 use App\Http\Controllers\Simulasi\SimulasiPembayaranController;
 use App\Http\Controllers\Simulasi\WebhookPembayaranController;
+use App\Http\Controllers\Tutor\AktivasiController;
+use App\Http\Controllers\Tutor\AreaTutorController;
+use App\Http\Controllers\Tutor\DaftarTutorController;
+use App\Http\Controllers\Tutor\DokumenController;
+use App\Http\Controllers\Tutor\PendaftaranController;
+use App\Http\Controllers\Tutor\StatusPendaftaranController;
 use App\Http\Controllers\TutorController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,11 +38,23 @@ Route::get('/', LandingController::class)->name('landing');
 */
 Route::middleware('guest')->group(function (): void {
     Route::get('/masuk', [SesiController::class, 'create'])->name('login');
-    Route::post('/masuk', [SesiController::class, 'store'])->name('login.store');
+    Route::post('/masuk', [SesiController::class, 'store'])->middleware('throttle:masuk')->name('login.store');
 
     Route::get('/daftar', [DaftarController::class, 'create'])->name('register');
-    Route::post('/daftar', [DaftarController::class, 'store'])->name('register.store');
+    Route::post('/daftar', [DaftarController::class, 'store'])->middleware('throttle:pendaftaran')->name('register.store');
+
+    // External tutor sign-up, step 1 (the account). Later steps need the account.
+    Route::post('/daftar-tutor', [DaftarTutorController::class, 'store'])->middleware('throttle:pendaftaran')->name('tutor.register.store');
+
+    // Internal tutors (already teaching at the bimbel) activate the record the company holds.
+    Route::get('/aktivasi-tutor', [AktivasiController::class, 'create'])->name('tutor.aktivasi');
+    Route::post('/aktivasi-tutor', [AktivasiController::class, 'store'])->middleware('throttle:aktivasi')->name('tutor.aktivasi.store');
+    Route::get('/aktivasi-tutor/{tutor}/kata-sandi', [AktivasiController::class, 'edit'])->name('tutor.aktivasi.sandi');
+    Route::post('/aktivasi-tutor/{tutor}/kata-sandi', [AktivasiController::class, 'update'])->middleware('throttle:aktivasi')->name('tutor.aktivasi.sandi.store');
 });
+
+// Visitors get step 1; a signed-in tutor is sent on to where they left off.
+Route::get('/daftar-tutor', [DaftarTutorController::class, 'create'])->name('tutor.register');
 
 /*
 | Public tutor search. Expired slot holds are released before slots are read.
@@ -87,6 +106,7 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
         Route::get('/verifikasi', [VerifikasiController::class, 'index'])->name('verifikasi.index');
         Route::get('/verifikasi/{tutor}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
         Route::post('/verifikasi/{tutor}/setujui', [VerifikasiController::class, 'setujui'])->name('verifikasi.setujui');
+        Route::post('/verifikasi/{tutor}/perbaikan', [VerifikasiController::class, 'perbaikan'])->name('verifikasi.perbaikan');
         Route::post('/verifikasi/{tutor}/tolak', [VerifikasiController::class, 'tolak'])->name('verifikasi.tolak');
 
         Route::get('/pesanan', [AdminPesananController::class, 'index'])->name('pesanan.index');
@@ -109,15 +129,33 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
 
         Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
     });
+
+    /*
+    | Tutor pages. "status-tutor" lets each application status reach only its own pages
+    | and sends everyone else to the page that fits them.
+    */
+    Route::middleware('peran:tutor')->group(function (): void {
+        Route::get('/daftar-tutor/status', StatusPendaftaranController::class)->middleware('status-tutor:menunggu,ditolak')->name('tutor.status');
+        Route::get('/area-tutor', AreaTutorController::class)->middleware('status-tutor:terverifikasi')->name('tutor.area');
+
+        Route::middleware('status-tutor:draf,perlu_perbaikan')->prefix('daftar-tutor')->name('tutor.pendaftaran.')->group(function (): void {
+            Route::put('/data-diri', [PendaftaranController::class, 'dataDiri'])->name('data-diri');
+            Route::put('/profil', [PendaftaranController::class, 'profil'])->name('profil');
+            Route::post('/dokumen', [DokumenController::class, 'store'])->name('dokumen.store');
+            Route::delete('/dokumen/{dokumen}', [DokumenController::class, 'destroy'])->name('dokumen.destroy')->can('delete', 'dokumen');
+            Route::put('/jadwal', [PendaftaranController::class, 'jadwal'])->name('jadwal');
+            Route::post('/kirim', [PendaftaranController::class, 'kirim'])->name('kirim');
+            Route::get('/{langkah}', [PendaftaranController::class, 'show'])->name('langkah');
+        });
+    });
+
+    // Verification documents live on the private disk; the policy allows the owner and admins.
+    Route::get('/berkas-verifikasi/{dokumen}', BerkasDokumenController::class)->name('dokumen.berkas')->can('view', 'dokumen');
 });
 
 /*
 | Placeholder pages until the real features are built.
 */
-Route::view('/daftar-tutor', 'placeholder', [
-    'title' => 'Daftar jadi tutor',
-    'message' => 'Pendaftaran tutor segera hadir. Kami sedang menyiapkan alur unggah berkas dan pemeriksaannya.',
-])->name('tutor.register');
 Route::view('/kebijakan-privasi', 'placeholder', ['title' => 'Kebijakan privasi'])->name('privacy');
 
 /*

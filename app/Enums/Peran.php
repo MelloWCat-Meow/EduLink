@@ -4,7 +4,7 @@ namespace App\Enums;
 
 /**
  * Account roles listed for Akun_Pengguna.peran in the EduLink report.
- * Only Ortu and Admin can sign in for now; Siswa and Tutor are reserved.
+ * Ortu, Tutor and Admin can sign in; Siswa is reserved.
  */
 enum Peran: string
 {
@@ -20,6 +20,8 @@ enum Peran: string
     {
         return match ($this) {
             self::Admin => 'admin.beranda',
+            // EnsureStatusTutor sends a tutor whose application is not verified yet on to the form or status page.
+            self::Tutor => 'tutor.area',
             default => 'beranda',
         };
     }

@@ -4,11 +4,15 @@
             Masuk, lalu lanjutkan <span class="stabilo stabilo-sapu">mencari guru</span>.
         </h1>
         <p class="mt-5 max-w-[30rem] text-[1.0625rem] leading-[1.75rem]">
-            Pakai email dan kata sandi yang Anda buat saat mendaftar.
+            Pakai email dan kata sandi yang Anda buat saat mendaftar. Orang tua, tutor, dan admin masuk di sini.
         </p>
         <p class="mt-8 flex max-w-[24rem] rotate-[-2deg] items-start gap-2 font-tangan text-[1.3rem] leading-snug text-tinta">
             <x-landing.tick class="mt-0.5 size-7 shrink-0" />
             Belum punya akun? Daftarnya cuma butuh nama, email, dan kata sandi.
+        </p>
+        <p class="mt-5 flex max-w-[26rem] items-start gap-2 font-tangan text-[1.25rem] leading-snug text-tinta">
+            <x-landing.tick class="mt-0.5 size-7 shrink-0" />
+            <span>Sudah mengajar di bimbel EduLink? <a href="{{ route('tutor.aktivasi') }}" class="underline decoration-2 underline-offset-4">Aktifkan akun</a></span>
         </p>
     </x-slot:aside>
 

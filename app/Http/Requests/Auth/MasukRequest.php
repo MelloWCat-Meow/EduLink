@@ -65,7 +65,7 @@ class MasukRequest extends FormRequest
             ]);
         }
 
-        if (! in_array(Auth::user()->peran, [Peran::Ortu, Peran::Admin], true)) {
+        if (! in_array(Auth::user()->peran, [Peran::Ortu, Peran::Tutor, Peran::Admin], true)) {
             Auth::logout();
 
             throw ValidationException::withMessages([
