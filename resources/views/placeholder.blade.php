@@ -12,7 +12,7 @@
             </a>
 
             <h1 class="mt-8 font-display text-[2.4rem] leading-tight font-extrabold tracking-tight [font-stretch:88%]">{{ $title }}</h1>
-            <p class="mt-3 text-[1.0625rem] leading-[1.75rem]">Halaman ini sedang disiapkan dan belum bisa digunakan.</p>
+            <p class="mt-3 text-[1.0625rem] leading-[1.75rem]">{{ $message ?? 'Halaman ini sedang disiapkan dan belum bisa digunakan.' }}</p>
 
             @if ($filters)
                 <div class="mt-6 rotate-[-0.6deg] bg-white p-5 shadow-[0_16px_28px_-22px_rgb(0_0_0/0.5)]">
