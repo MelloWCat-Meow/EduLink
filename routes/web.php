@@ -1,5 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\KeluhanController as AdminKeluhanController;
+use App\Http\Controllers\Admin\KomisiController;
+use App\Http\Controllers\Admin\PencairanController;
+use App\Http\Controllers\Admin\PenggunaController;
+use App\Http\Controllers\Admin\PesananController as AdminPesananController;
+use App\Http\Controllers\Admin\RingkasanController;
+use App\Http\Controllers\Admin\UlasanController as AdminUlasanController;
+use App\Http\Controllers\Admin\VerifikasiController;
 use App\Http\Controllers\Auth\DaftarController;
 use App\Http\Controllers\Auth\SesiController;
 use App\Http\Controllers\BerandaController;
@@ -70,7 +78,37 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
         }
     });
 
-    Route::view('/admin', 'admin.beranda')->middleware('peran:admin')->name('admin.beranda');
+    /*
+    | Admin dashboard. Only accounts with the admin role get past the "peran" middleware.
+    */
+    Route::middleware('peran:admin')->prefix('admin')->name('admin.')->group(function (): void {
+        Route::get('/', RingkasanController::class)->name('beranda');
+
+        Route::get('/verifikasi', [VerifikasiController::class, 'index'])->name('verifikasi.index');
+        Route::get('/verifikasi/{tutor}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
+        Route::post('/verifikasi/{tutor}/setujui', [VerifikasiController::class, 'setujui'])->name('verifikasi.setujui');
+        Route::post('/verifikasi/{tutor}/tolak', [VerifikasiController::class, 'tolak'])->name('verifikasi.tolak');
+
+        Route::get('/pesanan', [AdminPesananController::class, 'index'])->name('pesanan.index');
+        Route::get('/pesanan/{pesanan}', [AdminPesananController::class, 'show'])->name('pesanan.show');
+        Route::post('/pesanan/{pesanan}/batal', [AdminPesananController::class, 'batal'])->name('pesanan.batal');
+
+        Route::get('/keluhan', [AdminKeluhanController::class, 'index'])->name('keluhan.index');
+        Route::get('/keluhan/{keluhan}', [AdminKeluhanController::class, 'show'])->name('keluhan.show');
+        Route::put('/keluhan/{keluhan}', [AdminKeluhanController::class, 'update'])->name('keluhan.update');
+
+        Route::get('/ulasan', [AdminUlasanController::class, 'index'])->name('ulasan.index');
+        Route::put('/ulasan/{ulasan}', [AdminUlasanController::class, 'update'])->name('ulasan.update');
+
+        Route::get('/komisi', [KomisiController::class, 'edit'])->name('komisi.edit');
+        Route::put('/komisi', [KomisiController::class, 'update'])->name('komisi.update');
+
+        Route::get('/pencairan', [PencairanController::class, 'index'])->name('pencairan.index');
+        Route::post('/pencairan/{pencairan}/setujui', [PencairanController::class, 'setujui'])->name('pencairan.setujui');
+        Route::post('/pencairan/{pencairan}/bayar', [PencairanController::class, 'bayar'])->name('pencairan.bayar');
+
+        Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
+    });
 });
 
 /*

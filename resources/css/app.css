@@ -48,6 +48,9 @@
     --color-mint: #d3f5dc;
     --color-jambu: #ffdbe6;
     --color-map: #eef1ea;
+
+    /* Data marks in charts: mid-tone ink blue, validated for lightness band and contrast. */
+    --color-grafik: #3b5bdb;
 }
 
 @layer base {
