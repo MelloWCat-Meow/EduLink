@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\LangkahPendaftaran;
 use App\Enums\StatusTutor;
-use App\Enums\StatusVerifikasi;
+use App\Enums\StatusVerifikasiTutor;
 use App\Models\Concerns\HasPrefixedKey;
 use Database\Factories\TutorFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id_tutor
@@ -23,10 +25,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $nama
  * @property StatusTutor $status
  * @property string $kontak
+ * @property string|null $no_hp
+ * @property StatusVerifikasiTutor $status_verifikasi
+ * @property string|null $catatan_verifikasi
+ * @property array<string, string|null>|null $bagian_perbaikan
+ * @property Carbon|null $diajukan_pada
  * @property float|null $rata_rating
  * @property int|null $jumlah_ulasan
  */
-#[Fillable(['id_akun', 'nama', 'status', 'kontak'])]
+#[Fillable(['id_akun', 'nama', 'status', 'kontak', 'no_hp'])]
 class Tutor extends Model
 {
     /** @use HasFactory<TutorFactory> */
@@ -52,33 +59,29 @@ class Tutor extends Model
     {
         return [
             'status' => StatusTutor::class,
+            'status_verifikasi' => StatusVerifikasiTutor::class,
+            'bagian_perbaikan' => 'array',
+            'diajukan_pada' => 'datetime',
         ];
     }
 
     /**
-     * Tutors a parent may find and book: internal tutors, and external tutors
-     * whose documents were all approved. Both need a profile.
+     * Tutors a parent may find and book: the application was approved
+     * (internal and external alike) and there is a profile to show.
      */
     #[Scope]
     protected function tampil(Builder $query): void
     {
-        $query->whereHas('profil')->where(function (Builder $query): void {
-            $query->where('status', StatusTutor::Internal)
-                ->orWhere(function (Builder $query): void {
-                    $query->whereHas('dokumen')
-                        ->whereDoesntHave('dokumen', fn (Builder $dokumen) => $dokumen->where('status_verifikasi', '!=', StatusVerifikasi::Valid));
-                });
-        });
+        $query->where('status_verifikasi', StatusVerifikasiTutor::Terverifikasi)->whereHas('profil');
     }
 
     /**
-     * External tutors with at least one document still waiting for review.
+     * Applications sent and waiting for the admin.
      */
     #[Scope]
     protected function menungguVerifikasi(Builder $query): void
     {
-        $query->where('status', StatusTutor::Eksternal)
-            ->whereHas('dokumen', fn (Builder $dokumen) => $dokumen->where('status_verifikasi', StatusVerifikasi::Menunggu));
+        $query->where('status_verifikasi', StatusVerifikasiTutor::Menunggu);
     }
 
     /**
@@ -94,6 +97,26 @@ class Tutor extends Model
     public function isListed(): bool
     {
         return static::query()->tampil()->whereKey($this->getKey())->exists();
+    }
+
+    public function isInternal(): bool
+    {
+        return $this->status === StatusTutor::Internal;
+    }
+
+    /**
+     * The admin's correction note for one section of the form, if it was flagged.
+     */
+    public function catatanPerbaikan(LangkahPendaftaran $langkah): ?string
+    {
+        $bagian = $this->bagian_perbaikan ?? [];
+
+        return array_key_exists($langkah->value, $bagian) ? (string) ($bagian[$langkah->value] ?? '') : null;
+    }
+
+    public function perluDiperbaiki(LangkahPendaftaran $langkah): bool
+    {
+        return $this->catatanPerbaikan($langkah) !== null;
     }
 
     /**
@@ -150,6 +173,14 @@ class Tutor extends Model
     public function ulasan(): HasManyThrough
     {
         return $this->hasManyThrough(RatingUlasan::class, Pesanan::class, 'id_tutor', 'id_pesanan', 'id_tutor', 'id_pesanan');
+    }
+
+    /**
+     * @return HasMany<RiwayatVerifikasiTutor, $this>
+     */
+    public function riwayatVerifikasi(): HasMany
+    {
+        return $this->hasMany(RiwayatVerifikasiTutor::class, 'id_tutor', 'id_tutor');
     }
 
     /**

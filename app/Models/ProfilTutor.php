@@ -13,15 +13,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property string $id_profil
  * @property string $id_tutor
+ * @property array{pendidikan?: string, institusi?: string, jurusan?: string}|null $riwayat_pendidikan
  * @property string $kompetensi
  * @property string $pengalaman
- * @property string $tarif
- * @property string $lokasi
+ * @property string|null $tarif
+ * @property string|null $lokasi
  * @property string|null $foto
  * @property bool $melayani_online
  * @property bool $melayani_kunjungan
  */
-#[Fillable(['kompetensi', 'pengalaman', 'tarif', 'lokasi', 'foto', 'melayani_online', 'melayani_kunjungan'])]
+#[Fillable(['riwayat_pendidikan', 'kompetensi', 'pengalaman', 'tarif', 'lokasi', 'foto', 'melayani_online', 'melayani_kunjungan'])]
 class ProfilTutor extends Model
 {
     /** @use HasFactory<ProfilTutorFactory> */
@@ -46,6 +47,7 @@ class ProfilTutor extends Model
     protected function casts(): array
     {
         return [
+            'riwayat_pendidikan' => 'array',
             'tarif' => 'decimal:2',
             'melayani_online' => 'boolean',
             'melayani_kunjungan' => 'boolean',
@@ -71,6 +73,20 @@ class ProfilTutor extends Model
         $bagian = array_map(fn (ModeBelajar $mode): string => $mode === ModeBelajar::Online ? 'online' : 'datang ke rumah', $this->modes());
 
         return ucfirst(implode(' atau ', $bagian));
+    }
+
+    /**
+     * "S1 Pendidikan Matematika, Universitas Jambi".
+     */
+    public function pendidikanLabel(): ?string
+    {
+        $riwayat = $this->riwayat_pendidikan ?? [];
+
+        if (blank($riwayat['pendidikan'] ?? null)) {
+            return null;
+        }
+
+        return trim(($riwayat['pendidikan'] ?? '').' '.($riwayat['jurusan'] ?? '')).(filled($riwayat['institusi'] ?? null) ? ', '.$riwayat['institusi'] : '');
     }
 
     public function offers(ModeBelajar $mode): bool

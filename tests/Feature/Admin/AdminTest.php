@@ -58,7 +58,7 @@ class AdminTest extends TestCase
 
     public function test_approving_documents_puts_the_tutor_in_search(): void
     {
-        $tutor = Tutor::factory()->eksternal(StatusVerifikasi::Menunggu)->siapDipesan()->create(['nama' => 'Nurul Aisyah']);
+        $tutor = Tutor::factory()->eksternal(StatusVerifikasi::Menunggu)->menunggu()->siapDipesan()->create(['nama' => 'Nurul Aisyah']);
 
         $this->actingAs($this->admin)->get(route('admin.verifikasi.index'))->assertSeeText('Nurul Aisyah');
         $this->get(route('tutor.index'))->assertDontSeeText('Nurul Aisyah');
@@ -72,7 +72,7 @@ class AdminTest extends TestCase
 
     public function test_rejecting_documents_records_the_reason_and_keeps_the_tutor_hidden(): void
     {
-        $tutor = Tutor::factory()->eksternal(StatusVerifikasi::Menunggu)->siapDipesan()->create(['nama' => 'Bayu Firmansyah']);
+        $tutor = Tutor::factory()->eksternal(StatusVerifikasi::Menunggu)->menunggu()->siapDipesan()->create(['nama' => 'Bayu Firmansyah']);
 
         $this->actingAs($this->admin)->post(route('admin.verifikasi.tolak', $tutor), ['alasan' => ''])
             ->assertSessionHasErrors(['alasan' => 'Tulis alasannya. Alasan ini dicatat.']);

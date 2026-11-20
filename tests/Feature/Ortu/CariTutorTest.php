@@ -2,12 +2,11 @@
 
 namespace Tests\Feature\Ortu;
 
-use App\Enums\StatusTutor;
 use App\Enums\StatusVerifikasi;
-use App\Models\DokumenVerifikasi;
 use App\Models\MataPelajaran;
 use App\Models\Tutor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\Concerns\MembuatPesanan;
 use Tests\TestCase;
 
@@ -29,13 +28,15 @@ class CariTutorTest extends TestCase
         return $tutor;
     }
 
-    public function test_guests_can_search_and_only_listed_tutors_appear(): void
+    public function test_guests_can_search_and_only_verified_tutors_appear(): void
     {
         $this->tutor('Tutor Internal');
         Tutor::factory()->eksternal(StatusVerifikasi::Valid)->siapDipesan()->create(['nama' => 'Eksternal Lolos']);
-        Tutor::factory()->eksternal(StatusVerifikasi::Menunggu)->siapDipesan()->create(['nama' => 'Eksternal Menunggu']);
-        Tutor::factory()->eksternal(StatusVerifikasi::Ditolak)->siapDipesan()->create(['nama' => 'Eksternal Ditolak']);
-        Tutor::factory()->siapDipesan()->create(['nama' => 'Belum Lengkap', 'status' => StatusTutor::Eksternal]);
+        Tutor::factory()->eksternal(StatusVerifikasi::Menunggu)->menunggu()->siapDipesan()->create(['nama' => 'Eksternal Menunggu']);
+        Tutor::factory()->eksternal(StatusVerifikasi::Ditolak)->ditolak()->siapDipesan()->create(['nama' => 'Eksternal Ditolak']);
+        Tutor::factory()->eksternal()->perluPerbaikan()->siapDipesan()->create(['nama' => 'Eksternal Diperbaiki']);
+        Tutor::factory()->internal()->draf()->siapDipesan()->create(['nama' => 'Internal Belum Aktif']);
+        Tutor::factory()->create(['nama' => 'Tanpa Profil']);
 
         $this->get(route('tutor.index'))
             ->assertOk()
@@ -43,15 +44,20 @@ class CariTutorTest extends TestCase
             ->assertSeeText('Eksternal Lolos')
             ->assertDontSeeText('Eksternal Menunggu')
             ->assertDontSeeText('Eksternal Ditolak')
-            ->assertDontSeeText('Belum Lengkap');
+            ->assertDontSeeText('Eksternal Diperbaiki')
+            ->assertDontSeeText('Internal Belum Aktif')
+            ->assertDontSeeText('Tanpa Profil');
     }
 
-    public function test_external_tutor_with_one_document_still_pending_is_hidden(): void
+    #[TestWith(['draf'])]
+    #[TestWith(['menunggu'])]
+    #[TestWith(['perlu_perbaikan'])]
+    #[TestWith(['ditolak'])]
+    public function test_internal_tutor_is_hidden_until_the_application_is_verified(string $status): void
     {
-        $tutor = Tutor::factory()->eksternal(StatusVerifikasi::Valid)->siapDipesan()->create(['nama' => 'Setengah Lolos']);
-        DokumenVerifikasi::factory()->for($tutor, 'tutor')->create(['status_verifikasi' => StatusVerifikasi::Menunggu]);
+        $tutor = Tutor::factory()->internal()->siapDipesan()->create(['nama' => 'Guru Bimbel', 'status_verifikasi' => $status]);
 
-        $this->get(route('tutor.index'))->assertDontSeeText('Setengah Lolos');
+        $this->get(route('tutor.index'))->assertDontSeeText('Guru Bimbel');
         $this->get(route('tutor.show', $tutor))->assertNotFound();
     }
 

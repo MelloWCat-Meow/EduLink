@@ -41,7 +41,7 @@ class RingkasanTest extends TestCase
         $keluhan = new Keluhan(['id_pesanan' => $menunggu->id_pesanan, 'jenis' => 'lainnya', 'deskripsi' => 'Belum dijawab tutor.']);
         $keluhan->id_akun = AkunPengguna::factory()->ortu()->create()->id_akun;
         $keluhan->save();
-        Tutor::factory()->eksternal(StatusVerifikasi::Menunggu)->create();
+        Tutor::factory()->eksternal(StatusVerifikasi::Menunggu)->menunggu()->create();
 
         $r = app(LaporanRingkasan::class)->untuk('2026-11');
 

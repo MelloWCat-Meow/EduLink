@@ -17,7 +17,7 @@
                                 <td>{{ $tutor->mataPelajaran->map->label()->join(', ') }}</td>
                                 <td>{{ $tutor->profil?->lokasi ?? '–' }}</td>
                                 <td>{{ $tutor->dokumen->where('status_verifikasi', \App\Enums\StatusVerifikasi::Menunggu)->count() }} menunggu</td>
-                                <td class="whitespace-nowrap">{{ Format::tanggalPendek($tutor->diajukan_pada ? \Illuminate\Support\Carbon::parse($tutor->diajukan_pada) : null) }}</td>
+                                <td class="whitespace-nowrap">{{ Format::tanggalPendek($tutor->diajukan_pada) }}</td>
                                 <td><a href="{{ route('admin.verifikasi.show', $tutor) }}" class="tombol-garis min-h-10">Periksa<span class="sr-only"> {{ $tutor->nama }}</span></a></td>
                             </tr>
                         @endforeach

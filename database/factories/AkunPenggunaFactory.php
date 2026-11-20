@@ -37,6 +37,11 @@ class AkunPenggunaFactory extends Factory
         return $this->state(fn (array $attributes): array => ['peran' => Peran::Ortu]);
     }
 
+    public function tutor(): static
+    {
+        return $this->state(fn (array $attributes): array => ['peran' => Peran::Tutor]);
+    }
+
     public function admin(): static
     {
         return $this->state(fn (array $attributes): array => ['peran' => Peran::Admin]);
