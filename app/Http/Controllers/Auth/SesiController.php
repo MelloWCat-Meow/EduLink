@@ -28,7 +28,7 @@ class SesiController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route($request->user()->peran->homeRoute());
+        return redirect()->intended(route($request->user()->peran->homeRoute()));
     }
 
     /**

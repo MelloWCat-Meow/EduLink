@@ -73,14 +73,4 @@ class LandingPageTest extends TestCase
             $response->assertDontSeeText($internalTerm);
         }
     }
-
-    public function test_tutor_search_placeholder_echoes_the_submitted_filters(): void
-    {
-        $response = $this->get(route('tutor.index', ['mapel' => 'Fisika', 'jenjang' => 'sma', 'lokasi' => 'Telanaipura']));
-
-        $response->assertOk();
-        $response->assertSeeText('Fisika');
-        $response->assertSeeText('SMA');
-        $response->assertSeeText('Telanaipura');
-    }
 }

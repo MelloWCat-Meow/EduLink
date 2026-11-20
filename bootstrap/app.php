@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsurePeran;
+use App\Http\Middleware\LepasPenahananKedaluwarsa;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'peran' => EnsurePeran::class,
+            'lepas-penahanan' => LepasPenahananKedaluwarsa::class,
         ]);
 
         // The payment gateway cannot send a CSRF token; webhooks are checked by signature.

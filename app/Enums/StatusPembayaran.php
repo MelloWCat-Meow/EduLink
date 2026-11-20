@@ -16,4 +16,16 @@ enum StatusPembayaran: string
             self::Gagal => 'Gagal',
         };
     }
+
+    /**
+     * Label colour family for <x-dasbor.label>.
+     */
+    public function tone(): string
+    {
+        return match ($this) {
+            self::Pending => 'tunggu',
+            self::Berhasil => 'baik',
+            self::Gagal => 'buruk',
+        };
+    }
 }

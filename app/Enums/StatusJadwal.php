@@ -12,4 +12,16 @@ enum StatusJadwal: string
     {
         return ucfirst($this->value);
     }
+
+    /**
+     * Label colour family for <x-dasbor.label>.
+     */
+    public function tone(): string
+    {
+        return match ($this) {
+            self::Tersedia => 'baik',
+            self::Ditahan => 'tunggu',
+            self::Terisi => 'netral',
+        };
+    }
 }

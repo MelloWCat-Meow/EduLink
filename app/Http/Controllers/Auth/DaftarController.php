@@ -43,6 +43,6 @@ class DaftarController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route(Peran::Ortu->homeRoute());
+        return redirect()->intended(route(Peran::Ortu->homeRoute()));
     }
 }
