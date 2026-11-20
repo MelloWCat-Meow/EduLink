@@ -143,7 +143,7 @@ class PesanTutorTest extends TestCase
 
     public function test_unlisted_tutor_cannot_be_booked(): void
     {
-        $tutor = Tutor::factory()->siapDipesan()->create(['status' => 'eksternal']);
+        $tutor = Tutor::factory()->eksternal()->menunggu()->siapDipesan()->create();
 
         $this->actingAs($this->ortu)->get(route('tutor.pesan', $tutor))->assertNotFound();
     }
