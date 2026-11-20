@@ -1,65 +1,52 @@
 @props(['subjects', 'levels', 'locations'])
 
-<section aria-labelledby="judul-utama" class="bg-kertas">
-    <div class="mx-auto grid max-w-6xl gap-8 px-4 pt-8 pb-10 sm:px-6 md:pt-14 md:pb-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-14">
-        <div>
-            <h1 id="judul-utama" class="text-[2rem] leading-[1.15] font-extrabold tracking-tight text-dongker sm:text-5xl lg:text-[3.25rem]">
-                Guru les privat di Kota Jambi, dipilih dan dipesan sendiri dari HP Anda.
-            </h1>
-            <p class="mt-4 max-w-xl text-base leading-relaxed text-abu sm:text-lg">
-                Bandingkan tutor SD, SMP, dan SMA dari tarif per jam, ulasan, dan jadwal kosongnya.
-                Anda baru membayar setelah tutor menerima pesanan.
-            </p>
-            <ul class="mt-6 hidden max-w-xl gap-x-6 gap-y-2 text-sm font-medium text-dongker sm:flex sm:flex-wrap">
-                <li>Tutor diverifikasi Divisi Akademik EduLink</li>
-                <li>Online atau tutor datang ke rumah</li>
-            </ul>
-        </div>
+<section aria-labelledby="judul-utama" class="halaman relative pt-6 pb-16 lg:pt-16 lg:pb-24">
+    <div class="relative mx-auto max-w-[78rem]">
+        <p class="selotip absolute top-6 right-0 hidden w-60 rotate-[4deg] bg-sticky px-5 pt-6 pb-5 font-tangan text-[1.4rem] leading-[1.3] text-pensil shadow-[0_14px_22px_-16px_rgb(0_0_0/0.5)] min-[1360px]:block">
+            Les online, atau tutornya datang ke rumah. Anda yang pilih per sesi.
+        </p>
 
-        <form
-            action="{{ route('tutor.index') }}"
-            method="GET"
-            aria-labelledby="judul-cari"
-            class="on-dongker rounded-lg bg-dongker p-5 text-white sm:p-7"
-        >
-            <h2 id="judul-cari" class="text-xl font-bold">Cari tutor</h2>
-            <p class="mt-1 text-sm text-white/80">Boleh dikosongkan. Filter lain bisa diatur di halaman hasil.</p>
+        <h1 id="judul-utama" class="max-w-[16ch] font-display text-[clamp(2.4rem,8.2vw,6.6rem)] leading-[0.98] font-extrabold tracking-[-0.025em] [font-stretch:88%] lg:max-w-[17ch]">
+            PR Matematika bikin rumah ribut? Panggil <span class="stabilo stabilo-sapu">guru les privat</span> dari
+            <span class="relative inline-block whitespace-nowrap">
+                Jambi
+                <svg aria-hidden="true" class="absolute -bottom-[0.12em] left-0 h-[0.28em] w-full overflow-visible text-margin" viewBox="0 0 200 20" preserveAspectRatio="none" fill="none">
+                    <path class="coretan" pathLength="1" d="M3 13C40 6 92 4 197 9M14 17c50-5 110-6 168-3" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                </svg>
+            </span>
+            sendiri.
+        </h1>
 
-            <div class="mt-5 grid gap-4 sm:grid-cols-2">
-                <div class="sm:col-span-2">
-                    <label for="cari-mapel" class="block text-sm font-semibold">Mata pelajaran</label>
-                    <select id="cari-mapel" name="mapel" class="mt-1.5 block min-h-12 w-full rounded-md border-0 bg-white px-3 text-base text-dongker">
-                        <option value="">Semua mata pelajaran</option>
-                        @foreach ($subjects as $subject)
-                            <option value="{{ $subject }}">{{ $subject }}</option>
-                        @endforeach
-                    </select>
-                </div>
+        <div class="mt-5 grid gap-6 lg:mt-14 lg:grid-cols-12 lg:gap-8">
+            {{-- On phones the checklist moves below the form so the form starts in the first screen. --}}
+            <div class="contents lg:col-span-4 lg:block">
+                <p class="order-1 max-w-[34rem] text-[1.0625rem] leading-[1.75rem] lg:text-[1.125rem] lg:leading-[2rem]">
+                    Pilih mapel dan jenjang anak Anda, lihat tarif per jam dan jadwal kosong tutornya, lalu pesan sesi online atau minta tutor datang ke rumah.
+                </p>
 
-                <div>
-                    <label for="cari-jenjang" class="block text-sm font-semibold">Jenjang</label>
-                    <select id="cari-jenjang" name="jenjang" class="mt-1.5 block min-h-12 w-full rounded-md border-0 bg-white px-3 text-base text-dongker">
-                        <option value="">Semua jenjang</option>
-                        @foreach ($levels as $key => $level)
-                            <option value="{{ $key }}">{{ $level['label'] }} ({{ $level['grades'] }})</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label for="cari-lokasi" class="block text-sm font-semibold">Lokasi (kecamatan)</label>
-                    <select id="cari-lokasi" name="lokasi" class="mt-1.5 block min-h-12 w-full rounded-md border-0 bg-white px-3 text-base text-dongker">
-                        <option value="">Seluruh Kota Jambi</option>
-                        @foreach ($locations as $location)
-                            <option value="{{ $location }}">{{ $location }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <ul class="order-3 space-y-4 font-tangan text-[1.25rem] leading-[1.35] text-tinta lg:mt-8 lg:text-[1.3rem]">
+                    <li class="flex items-start gap-3">
+                        <x-landing.tick class="mt-0.5 size-7 shrink-0" />
+                        Ijazah, KTP, dan sertifikat tiap tutor sudah kami cek sebelum profilnya tampil.
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <x-landing.tick class="mt-0.5 size-7 shrink-0" />
+                        Ulasan cuma bisa ditulis orang tua yang benar-benar memesan.
+                    </li>
+                </ul>
             </div>
 
-            <button type="submit" class="mt-6 flex min-h-12 w-full items-center justify-center rounded-md bg-merah px-5 text-base font-bold text-white hover:bg-merah-tua active:translate-y-px">
-                Tampilkan tutor
-            </button>
-        </form>
+            <div id="cari" class="relative order-2 lg:col-span-8 lg:col-start-5">
+                <p aria-hidden="true" class="mb-1 ml-auto flex w-fit rotate-[-4deg] items-start gap-1 pr-2 font-tangan text-[1.3rem] leading-none text-tinta lg:absolute lg:-top-16 lg:right-6 lg:mb-0">
+                    <span class="pt-1">isi tiga ini, beres</span>
+                    <svg class="h-10 w-10 shrink-0 lg:h-12 lg:w-11" viewBox="0 0 44 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 6c18-2 30 10 28 34" />
+                        <path d="M26 33l8 9 6-11" />
+                    </svg>
+                </p>
+
+                <x-landing.search-sheet :subjects="$subjects" :levels="$levels" :locations="$locations" />
+            </div>
+        </div>
     </div>
 </section>

@@ -1,57 +1,39 @@
 @php
     $links = [
-        '#cara-kerja' => 'Cara kerja',
-        '#mode-belajar' => 'Mode belajar',
-        '#contoh-tutor' => 'Contoh tutor',
-        '#untuk-tutor' => 'Untuk tutor',
-        '#faq' => 'Tanya jawab',
+        ['href' => '#cara-kerja', 'label' => 'Cara kerja'],
+        ['href' => '#contoh-tutor', 'label' => 'Contoh tutor'],
+        ['href' => '#tanya-jawab', 'label' => 'Tanya jawab'],
+        ['href' => '#jadi-tutor', 'label' => 'Mau jadi tutor?'],
     ];
 @endphp
 
-<header class="sticky top-0 z-40 border-b border-garis bg-white">
-    <nav aria-label="Navigasi utama" class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <a href="{{ route('landing') }}" class="text-lg font-extrabold tracking-tight text-dongker">
-            EduLink <span class="font-semibold">Tutor</span>
+<header class="halaman relative z-20 pt-4">
+    <nav aria-label="Utama" class="mx-auto flex max-w-[78rem] items-center justify-between gap-4">
+        <a href="{{ route('landing') }}" class="font-display text-[1.45rem] leading-none font-extrabold tracking-tight [font-stretch:85%]">
+            EduLink <span class="font-tangan text-[1.35rem] font-bold text-tinta">tutor</span>
         </a>
 
-        <ul class="hidden items-center gap-1 lg:flex">
-            @foreach ($links as $href => $label)
-                <li>
-                    <a href="{{ $href }}" class="rounded-md px-3 py-2 text-sm font-medium text-dongker hover:bg-kertas hover:underline">{{ $label }}</a>
-                </li>
+        <ul class="hidden items-center gap-7 text-[1.0625rem] lg:flex">
+            @foreach ($links as $link)
+                <li><a href="{{ $link['href'] }}" class="chip-mapel py-2">{{ $link['label'] }}</a></li>
             @endforeach
+            <li>
+                <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center rounded-[0.6rem_0.9rem_0.5rem_1rem] border-2 border-pensil px-5 font-bold hover:bg-stabilo">
+                    Masuk
+                </a>
+            </li>
         </ul>
 
-        <div class="hidden items-center gap-2 lg:flex">
-            <a href="{{ route('login') }}" class="rounded-md px-4 py-2.5 text-sm font-semibold text-dongker hover:bg-kertas">Masuk</a>
-            <a href="{{ route('register') }}" class="rounded-md bg-dongker px-4 py-2.5 text-sm font-semibold text-white hover:bg-dongker-muda active:bg-dongker">Daftar</a>
-        </div>
-
-        <button
-            type="button"
-            data-menu-toggle
-            aria-controls="menu-ponsel"
-            aria-expanded="true"
-            class="inline-flex min-h-11 items-center gap-2 rounded-md border border-garis px-3 text-sm font-semibold text-dongker hover:bg-kertas active:bg-garis lg:hidden"
-        >
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
-                <path d="M2 4.5h14M2 9h14M2 13.5h14" />
-            </svg>
-            <span data-menu-label>Menu</span>
-        </button>
+        <details class="relative lg:hidden">
+            <summary class="flex min-h-11 items-center rounded-[0.6rem_0.9rem_0.5rem_1rem] border-2 border-pensil px-4 font-bold">
+                Menu
+            </summary>
+            <ul class="absolute right-0 mt-2 w-60 rotate-1 bg-sticky p-2 shadow-[0_12px_24px_-14px_rgb(0_0_0/0.45)]">
+                @foreach ($links as $link)
+                    <li><a href="{{ $link['href'] }}" class="block px-3 py-3 font-bold">{{ $link['label'] }}</a></li>
+                @endforeach
+                <li><a href="{{ route('login') }}" class="block px-3 py-3 font-bold">Masuk</a></li>
+            </ul>
+        </details>
     </nav>
-
-    <div id="menu-ponsel" class="border-t border-garis bg-white lg:hidden">
-        <ul class="mx-auto max-w-6xl px-4 py-2 sm:px-6">
-            @foreach ($links as $href => $label)
-                <li>
-                    <a href="{{ $href }}" class="flex min-h-12 items-center border-b border-kertas text-base font-medium text-dongker hover:underline">{{ $label }}</a>
-                </li>
-            @endforeach
-        </ul>
-        <div class="mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 pt-2 pb-4 sm:px-6">
-            <a href="{{ route('login') }}" class="flex min-h-12 items-center justify-center rounded-md border border-dongker font-semibold text-dongker hover:bg-kertas">Masuk</a>
-            <a href="{{ route('register') }}" class="flex min-h-12 items-center justify-center rounded-md bg-dongker font-semibold text-white hover:bg-dongker-muda">Daftar</a>
-        </div>
-    </div>
 </header>

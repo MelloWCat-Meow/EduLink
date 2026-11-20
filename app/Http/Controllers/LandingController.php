@@ -16,6 +16,8 @@ class LandingController extends Controller
             'subjects' => config('landing.subjects'),
             'locations' => config('landing.locations'),
             'sampleTutors' => config('landing.sample_tutors'),
+            'steps' => config('landing.steps'),
+            'faqs' => config('landing.faqs'),
             'contact' => config('landing.contact'),
         ]);
     }

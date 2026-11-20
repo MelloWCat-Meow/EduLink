@@ -1,66 +1,70 @@
 @php
     $benefits = [
-        'Tentukan sendiri tarif per jam, mata pelajaran, jenjang, dan area mengajar.',
-        'Atur jadwal ketersediaan, lalu terima atau tolak pesanan yang masuk.',
-        'Pesanan dan pembayaran tercatat di platform. Pendapatan bisa Anda cairkan dari akun tutor.',
-        'Rating dan ulasan dari murid yang benar-benar Anda ajar membantu orang tua lain memilih Anda.',
+        'Murid datang dari orang tua di Kota Jambi, tanpa Anda promosi sendiri.',
+        'Anda yang mengatur jadwal kosong, dan bebas menerima atau menolak pesanan.',
+        'Pembayaran diurus EduLink, jadi tidak perlu menagih orang tua.',
+        'Mengajar online, datang ke rumah murid, atau keduanya.',
     ];
 
     $documents = [
-        'Ijazah terakhir',
-        'KTP',
-        'Sertifikat pendukung',
+        ['name' => 'KTP', 'note' => 'yang masih berlaku'],
+        ['name' => 'Ijazah terakhir', 'note' => 'hasil pindai atau foto yang jelas'],
+        ['name' => 'Sertifikat', 'note' => 'pelatihan, lomba, atau keahlian; boleh lebih dari satu, boleh juga tidak ada'],
     ];
 
-    $verificationSteps = [
-        'Isi data diri, pendidikan, pengalaman mengajar, mapel, jenjang, tarif, dan lokasi.',
-        'Unggah dokumen yang diminta.',
-        'Divisi Akademik EduLink memeriksa identitas, dokumen, dan kompetensi Anda.',
-        'Setelah lolos, profil Anda tampil di pencarian dan bisa menerima pesanan.',
+    $flow = [
+        'Buat akun tutor dan isi profil: mapel, jenjang, wilayah, dan tarif.',
+        'Unggah KTP, ijazah, dan sertifikat.',
+        'Tim EduLink memeriksa berkas Anda.',
+        'Setelah disetujui, profil Anda tampil di pencarian orang tua.',
     ];
 @endphp
 
-<section id="untuk-tutor" aria-labelledby="judul-untuk-tutor" class="on-dongker bg-dongker text-white">
-    <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
-        <div class="max-w-2xl">
-            <h2 id="judul-untuk-tutor" class="text-2xl font-extrabold tracking-tight sm:text-3xl">Mengajar les privat? Daftar jadi tutor EduLink.</h2>
-            <p class="mt-3 leading-relaxed text-white/85">Orang tua di Kota Jambi mencari tutor di sini. Lengkapi profil Anda sekali, lalu pesanan datang lewat platform.</p>
-        </div>
+<section id="jadi-tutor" aria-labelledby="judul-jadi-tutor" class="kertas-garis sobek-atas halaman relative -mt-4 pt-20 pb-20 lg:pt-28 lg:pb-28">
+    <div class="mx-auto max-w-[78rem]">
+        <p class="font-tangan text-[1.35rem] text-tinta">untuk Anda yang mengajar di Kota Jambi</p>
+        <h2 id="judul-jadi-tutor" class="mt-1 max-w-[18ch] font-display text-[clamp(2rem,5vw,3.6rem)] leading-[1.02] font-extrabold tracking-tight [font-stretch:88%]">
+            Mengajar les privat lewat EduLink
+        </h2>
 
-        <div class="mt-10 grid gap-10 lg:grid-cols-3 lg:gap-12">
-            <div class="lg:col-span-1">
-                <h3 class="text-lg font-bold">Yang Anda dapat</h3>
-                <ul class="mt-4 space-y-3 leading-relaxed text-white/85">
+        <div class="mt-10 grid gap-12 lg:grid-cols-12 lg:gap-8">
+            <div class="selotip relative rotate-[-1.2deg] self-start bg-sticky px-6 pt-8 pb-7 shadow-[0_16px_26px_-20px_rgb(0_0_0/0.55)] lg:col-span-5">
+                <h3 class="font-display text-[1.5rem] font-extrabold [font-stretch:88%]">Yang Anda dapat</h3>
+                <ul class="mt-3 space-y-3 text-[1.0625rem] leading-[1.55]">
                     @foreach ($benefits as $benefit)
-                        <li class="flex gap-3"><span aria-hidden="true" class="mt-2.5 h-0.5 w-3 shrink-0 bg-white"></span>{{ $benefit }}</li>
+                        <li class="flex items-start gap-3">
+                            <x-landing.tick class="mt-0.5 size-6 shrink-0 text-tinta" />
+                            {{ $benefit }}
+                        </li>
                     @endforeach
                 </ul>
             </div>
 
-            <div>
-                <h3 class="text-lg font-bold">Dokumen yang disiapkan</h3>
-                <ul class="mt-4 space-y-2">
+            <div class="lg:col-span-6 lg:col-start-7">
+                <h3 class="font-display text-[1.5rem] font-extrabold [font-stretch:88%]">Siapkan dokumen ini</h3>
+                <ul class="mt-3">
                     @foreach ($documents as $document)
-                        <li class="rounded-md border border-white/25 px-4 py-3 font-medium">{{ $document }}</li>
+                        <li class="flex items-start gap-3 border-b border-dashed border-pensil-muda py-3">
+                            <span aria-hidden="true" class="mt-0.5 size-6 shrink-0 border-2 border-pensil"></span>
+                            <span class="leading-[1.55]"><span class="font-bold">{{ $document['name'] }}</span>, {{ $document['note'] }}</span>
+                        </li>
                     @endforeach
                 </ul>
-            </div>
 
-            <div>
-                <h3 class="text-lg font-bold">Alur verifikasi</h3>
+                <h3 class="mt-10 font-display text-[1.5rem] font-extrabold [font-stretch:88%]">Alur verifikasinya</h3>
                 <ol class="mt-4 space-y-4">
-                    @foreach ($verificationSteps as $step)
-                        <li class="flex gap-3 leading-relaxed text-white/85">
-                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-white text-sm font-extrabold text-dongker">{{ $loop->iteration }}</span>
-                            <span>{{ $step }}</span>
+                    @foreach ($flow as $step)
+                        <li class="grid grid-cols-[2.5rem_1fr] items-start gap-3">
+                            <span aria-hidden="true" class="grid size-10 place-items-center rounded-full border-2 border-tinta font-tangan text-[1.35rem] leading-none font-bold text-tinta">{{ $loop->iteration }}</span>
+                            <p class="pt-1.5 leading-[1.55]">{{ $step }}</p>
                         </li>
                     @endforeach
                 </ol>
+
+                <a href="{{ route('tutor.register') }}" class="mt-9 inline-flex min-h-13 items-center rounded-[0.7rem_1.1rem_0.6rem_1.2rem] bg-tinta px-7 font-display text-[1.2rem] font-bold text-white shadow-[4px_4px_0_var(--color-stabilo)] transition-[translate,box-shadow] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--color-stabilo)] motion-reduce:transition-none">
+                    Daftar jadi tutor
+                </a>
             </div>
         </div>
-
-        <a href="{{ route('tutor.register') }}" class="mt-10 inline-flex min-h-12 items-center justify-center rounded-md bg-white px-6 text-base font-bold text-dongker hover:bg-kertas active:translate-y-px max-sm:w-full">
-            Daftar jadi tutor
-        </a>
     </div>
 </section>
