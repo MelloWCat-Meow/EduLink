@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Enums\StatusPencairan;
 use App\Exceptions\AksiDitolak;
 use App\Models\PencairanDanaTutor;
+use App\Models\Tutor;
+use App\Support\Format;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -13,7 +15,40 @@ use Illuminate\Support\Facades\DB;
  */
 class PencairanDana
 {
-    public function __construct(private SaldoTutor $saldoTutor) {}
+    public function __construct(private SaldoTutor $saldoTutor, private Pemberitahu $pemberitahu) {}
+
+    /**
+     * A tutor's payout request. Needs a payout account, at most one request
+     * waiting at a time, and an amount within the available balance.
+     */
+    public function ajukan(Tutor $tutor, string $periode, string $nominal): PencairanDanaTutor
+    {
+        return DB::transaction(function () use ($tutor, $periode, $nominal): PencairanDanaTutor {
+            $tutor = Tutor::query()->lockForUpdate()->findOrFail($tutor->id_tutor);
+
+            if (! $tutor->punyaRekening()) {
+                throw new AksiDitolak('Isi rekening pencairan dulu sebelum mengajukan pencairan.');
+            }
+
+            if ($tutor->pencairan()->where('status', StatusPencairan::Menunggu)->exists()) {
+                throw new AksiDitolak('Masih ada pengajuan yang menunggu persetujuan admin. Ajukan lagi setelah pengajuan itu diproses.');
+            }
+
+            $saldo = $this->saldoTutor->satu($tutor->id_tutor)['saldo'];
+
+            if (bccomp($nominal, $saldo, 2) === 1) {
+                throw new AksiDitolak('Nominal melebihi saldo tersedia ('.Format::rupiah($saldo).').');
+            }
+
+            $pencairan = $tutor->pencairan()->make(['periode' => $periode, 'nominal' => $nominal]);
+            $pencairan->status = StatusPencairan::Menunggu;
+            $pencairan->save();
+
+            $this->pemberitahu->pengajuanPencairanBaru($pencairan);
+
+            return $pencairan;
+        });
+    }
 
     public function setujui(PencairanDanaTutor $pencairan): void
     {
@@ -33,6 +68,7 @@ class PencairanDana
             $terkunci->status = StatusPencairan::Disetujui;
             $terkunci->save();
             $pencairan->setRawAttributes($terkunci->getAttributes(), true);
+            $this->pemberitahu->pencairanDiperbarui($terkunci);
         });
     }
 
@@ -48,6 +84,7 @@ class PencairanDana
             $terkunci->status = StatusPencairan::Dibayar;
             $terkunci->save();
             $pencairan->setRawAttributes($terkunci->getAttributes(), true);
+            $this->pemberitahu->pencairanDiperbarui($terkunci);
         });
     }
 }

@@ -23,4 +23,12 @@ class PesananPolicy
     {
         return $this->view($akun, $pesanan);
     }
+
+    /**
+     * The tutor the order was placed with: sees it and answers it.
+     */
+    public function kelolaTutor(AkunPengguna $akun, Pesanan $pesanan): bool
+    {
+        return $akun->peran === Peran::Tutor && $akun->tutor?->id_tutor === $pesanan->id_tutor;
+    }
 }

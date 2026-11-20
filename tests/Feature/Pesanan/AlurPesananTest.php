@@ -201,6 +201,7 @@ class AlurPesananTest extends TestCase
     {
         $pesanan = $this->pesananDibayar(ubah: ['jumlah_pertemuan' => 2]);
         [$pertama, $kedua] = $pesanan->sesi()->orderBy('waktu')->get();
+        $this->travelTo($kedua->waktu->copy()->addMinutes(5));
 
         $this->alur()->catatKehadiran($pertama, Kehadiran::Hadir);
         $this->assertSame(StatusPesanan::Dibayar, $pesanan->refresh()->status);

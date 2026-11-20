@@ -31,6 +31,7 @@ class DaftarController extends Controller
             $akun = new AkunPengguna([
                 'nama' => $request->validated('nama'),
                 'kontak' => $request->validated('kontak'),
+                'no_hp' => $request->validated('no_hp'),
                 'kredensial' => $request->validated('password'),
             ]);
             $akun->peran = Peran::Ortu;

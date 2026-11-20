@@ -16,6 +16,7 @@ use App\Models\Pesanan;
 use App\Models\SesiPembelajaran;
 use App\Models\Siswa;
 use App\Models\Tutor;
+use App\Support\Format;
 use Closure;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,8 @@ class AlurPesanan
      * Hours a slot stays held while waiting for the tutor, and again for payment.
      */
     public const MASA_TAHAN_JAM = 24;
+
+    public function __construct(private Pemberitahu $pemberitahu) {}
 
     /**
      * @param  array{siswa: Siswa, tutor: Tutor, mapel: MataPelajaran, id_jadwal: string, mode: ModeBelajar, durasi: int, tanggal_mulai: Carbon, jumlah_pertemuan: int}  $data
@@ -72,6 +75,7 @@ class AlurPesanan
             $jadwal->update(['status' => StatusJadwal::Ditahan]);
 
             $this->catatRiwayat($pesanan, 'Pesanan dibuat. Menunggu tutor menerima.', $oleh);
+            $this->pemberitahu->pesananBaru($pesanan);
 
             return $pesanan;
         });
@@ -95,6 +99,8 @@ class AlurPesanan
             $this->pindah($pesanan, StatusPesanan::MenungguPembayaran, 'Tutor menerima pesanan. Silakan bayar sebelum batas waktu.', $oleh);
             $pesanan->ditahan_hingga = now()->addHours(self::MASA_TAHAN_JAM);
             $pesanan->save();
+
+            $this->pemberitahu->pesananDiterima($pesanan);
         });
     }
 
@@ -105,6 +111,7 @@ class AlurPesanan
         $this->denganKunci($pesanan, function (Pesanan $pesanan) use ($alasan, $oleh): void {
             $this->pindah($pesanan, StatusPesanan::Ditolak, $alasan ?? 'Tutor menolak pesanan.', $oleh);
             $this->lepasSlot($pesanan);
+            $this->pemberitahu->pesananDitolak($pesanan, $alasan ?? 'Tutor menolak pesanan.');
         });
     }
 
@@ -120,6 +127,26 @@ class AlurPesanan
 
             $this->pindah($pesanan, StatusPesanan::Batal, 'Dibatalkan oleh orang tua.', $oleh);
             $this->lepasSlot($pesanan);
+            $this->pemberitahu->pesananDibatalkan($pesanan, 'ortu', 'Dibatalkan oleh orang tua.');
+        });
+    }
+
+    /**
+     * Tutors may cancel an order they accepted while it still waits for
+     * payment. Once paid, a tutor has to file a complaint instead.
+     */
+    public function batalkanOlehTutor(Pesanan $pesanan, string $alasan, AkunPengguna $oleh): void
+    {
+        $this->tolakJikaKedaluwarsa($pesanan);
+
+        $this->denganKunci($pesanan, function (Pesanan $pesanan) use ($alasan, $oleh): void {
+            if ($pesanan->status !== StatusPesanan::MenungguPembayaran) {
+                throw new TransisiStatusTidakSah("Tutor hanya bisa membatalkan pesanan yang menunggu pembayaran. Status pesanan ini: {$pesanan->status->label()}. Untuk pesanan yang sudah dibayar, ajukan keluhan ke admin.");
+            }
+
+            $this->pindah($pesanan, StatusPesanan::Batal, 'Dibatalkan tutor: '.$alasan, $oleh);
+            $this->lepasSlot($pesanan);
+            $this->pemberitahu->pesananDibatalkan($pesanan, 'tutor', 'Alasan: '.$alasan);
         });
     }
 
@@ -131,6 +158,7 @@ class AlurPesanan
         $this->denganKunci($pesanan, function (Pesanan $pesanan) use ($alasan, $oleh): void {
             $this->pindah($pesanan, StatusPesanan::Batal, 'Dibatalkan admin: '.$alasan, $oleh);
             $this->lepasSlot($pesanan);
+            $this->pemberitahu->pesananDibatalkan($pesanan, 'admin', 'Alasan: '.$alasan);
         });
     }
 
@@ -156,21 +184,44 @@ class AlurPesanan
                 'persentase' => $persen,
                 'nominal' => self::bulatkan(bcdiv(bcmul((string) $pesanan->total_biaya, $persen, 4), '100', 4)),
             ]);
+
+            $this->pemberitahu->pembayaranBerhasil($pesanan);
         });
+    }
+
+    /**
+     * The tutor turns down a request; the reason is kept on the timeline.
+     */
+    public function tolakOlehTutor(Pesanan $pesanan, string $alasan, AkunPengguna $oleh): void
+    {
+        $this->tolak($pesanan, 'Ditolak tutor: '.$alasan, $oleh);
     }
 
     /**
      * Logs attendance for one session. When every session of the order has
      * been logged, the order is finished and the weekly slot opens again.
+     * A session can be logged only once it has started; $periksaWaktu is
+     * false only for the local simulation command and test helpers.
      */
-    public function catatKehadiran(SesiPembelajaran $sesi, Kehadiran $kehadiran, ?string $catatan = null): void
+    public function catatKehadiran(SesiPembelajaran $sesi, Kehadiran $kehadiran, ?string $catatan = null, bool $periksaWaktu = true, ?AkunPengguna $oleh = null): void
     {
-        $this->denganKunci($sesi->pesanan()->firstOrFail(), function (Pesanan $pesanan) use ($sesi, $kehadiran, $catatan): void {
+        $this->denganKunci($sesi->pesanan()->firstOrFail(), function (Pesanan $pesanan) use ($sesi, $kehadiran, $catatan, $periksaWaktu): void {
             if ($pesanan->status !== StatusPesanan::Dibayar) {
                 throw new TransisiStatusTidakSah("Kehadiran hanya bisa dicatat untuk pesanan yang sudah dibayar. Status pesanan ini: {$pesanan->status->label()}.");
             }
 
+            $sesi->refresh();
+
+            if ($sesi->kehadiran !== null) {
+                throw new TransisiStatusTidakSah('Kehadiran sesi ini sudah dicatat.');
+            }
+
+            if ($periksaWaktu && $sesi->waktu->isFuture()) {
+                throw new TransisiStatusTidakSah('Kehadiran baru bisa dicatat setelah sesi dimulai ('.Format::waktu($sesi->waktu, true).').');
+            }
+
             $sesi->update(['kehadiran' => $kehadiran, 'catatan' => $catatan ?? $sesi->catatan]);
+            $this->pemberitahu->sesiDicatat($sesi);
 
             if ($pesanan->sesi()->whereNull('kehadiran')->doesntExist()) {
                 $this->pindah($pesanan, StatusPesanan::Selesai, 'Semua sesi sudah tercatat. Pesanan selesai.');
@@ -228,6 +279,7 @@ class AlurPesanan
 
         $this->pindah($pesanan, StatusPesanan::Batal, 'Kedaluwarsa. '.$sebab.' Jadwal dilepas.');
         $this->lepasSlot($pesanan);
+        $this->pemberitahu->pesananKedaluwarsa($pesanan, $sebab);
     }
 
     private function pindah(Pesanan $pesanan, StatusPesanan $ke, string $catatan, ?AkunPengguna $oleh = null): void

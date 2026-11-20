@@ -32,7 +32,7 @@
         </x-dasbor.panel>
     @else
         <form method="post" action="{{ route('tutor.pesan.store', $tutor) }}" novalidate
-              class="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start"
+              class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start"
               data-tarif="{{ (float) $tutor->profil->tarif }}">
             @csrf
 

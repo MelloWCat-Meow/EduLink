@@ -7,6 +7,8 @@ enum StatusJadwal: string
     case Tersedia = 'tersedia';
     case Ditahan = 'ditahan';
     case Terisi = 'terisi';
+    // Removed by the tutor but kept because past orders point at it. Never bookable.
+    case Nonaktif = 'nonaktif';
 
     public function label(): string
     {
@@ -22,6 +24,7 @@ enum StatusJadwal: string
             self::Tersedia => 'baik',
             self::Ditahan => 'tunggu',
             self::Terisi => 'netral',
+            self::Nonaktif => 'netral',
         };
     }
 }

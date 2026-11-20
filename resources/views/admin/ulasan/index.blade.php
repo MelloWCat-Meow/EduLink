@@ -17,7 +17,7 @@
         @else
             <ul class="divide-y divide-pensil/12">
                 @foreach ($daftarUlasan as $ulasan)
-                    <li class="grid gap-4 py-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+                    <li class="grid grid-cols-[minmax(0,1fr)] gap-4 py-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
                         <div>
                             <p class="flex flex-wrap items-center gap-2">
                                 <span class="font-bold">{{ $ulasan->nilai }} dari 5 untuk {{ $ulasan->pesanan->tutor->nama }}</span>

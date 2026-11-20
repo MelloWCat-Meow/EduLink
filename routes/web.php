@@ -13,6 +13,8 @@ use App\Http\Controllers\Auth\SesiController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\BerkasDokumenController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\Ortu\AkunController;
 use App\Http\Controllers\Ortu\AnakController;
 use App\Http\Controllers\Ortu\BayarController;
 use App\Http\Controllers\Ortu\KeluhanController;
@@ -23,11 +25,18 @@ use App\Http\Controllers\Ortu\UlasanController;
 use App\Http\Controllers\Simulasi\SimulasiPembayaranController;
 use App\Http\Controllers\Simulasi\WebhookPembayaranController;
 use App\Http\Controllers\Tutor\AktivasiController;
-use App\Http\Controllers\Tutor\AreaTutorController;
+use App\Http\Controllers\Tutor\BerandaTutorController;
 use App\Http\Controllers\Tutor\DaftarTutorController;
 use App\Http\Controllers\Tutor\DokumenController;
+use App\Http\Controllers\Tutor\JadwalTutorController;
+use App\Http\Controllers\Tutor\KeluhanTutorController;
 use App\Http\Controllers\Tutor\PendaftaranController;
+use App\Http\Controllers\Tutor\PendapatanController;
+use App\Http\Controllers\Tutor\PesananTutorController;
+use App\Http\Controllers\Tutor\ProfilSayaController;
+use App\Http\Controllers\Tutor\SesiTutorController;
 use App\Http\Controllers\Tutor\StatusPendaftaranController;
+use App\Http\Controllers\Tutor\UlasanTutorController;
 use App\Http\Controllers\TutorController;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +76,11 @@ Route::middleware('lepas-penahanan')->group(function (): void {
 Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
     Route::post('/keluar', [SesiController::class, 'destroy'])->name('logout');
 
+    // Notifications for every role.
+    Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+    Route::post('/notifikasi/baca-semua', [NotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
+    Route::post('/notifikasi/{notifikasi}/buka', [NotifikasiController::class, 'buka'])->name('notifikasi.buka');
+
     /*
     | Parent dashboard. Policies keep every order, child and complaint to its own account.
     */
@@ -91,6 +105,9 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
 
         Route::get('/pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
         Route::get('/keluhan', [KeluhanController::class, 'index'])->name('keluhan.index');
+
+        Route::get('/akun', [AkunController::class, 'edit'])->name('akun.edit');
+        Route::put('/akun', [AkunController::class, 'update'])->name('akun.update');
 
         if (! app()->isProduction()) {
             Route::get('/simulasi/pembayaran/{pembayaran}', SimulasiPembayaranController::class)->name('simulasi.pembayaran')->can('view', 'pembayaran');
@@ -136,7 +153,37 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
     */
     Route::middleware('peran:tutor')->group(function (): void {
         Route::get('/daftar-tutor/status', StatusPendaftaranController::class)->middleware('status-tutor:menunggu,ditolak')->name('tutor.status');
-        Route::get('/area-tutor', AreaTutorController::class)->middleware('status-tutor:terverifikasi')->name('tutor.area');
+
+        // The tutor dashboard, for verified tutors only.
+        Route::middleware('status-tutor:terverifikasi')->prefix('area-tutor')->name('tutor.')->group(function (): void {
+            Route::get('/', BerandaTutorController::class)->name('area');
+
+            Route::get('/pesanan', [PesananTutorController::class, 'index'])->name('pesanan.index');
+            Route::get('/pesanan/{pesanan}', [PesananTutorController::class, 'show'])->name('pesanan.show')->can('kelolaTutor', 'pesanan');
+            Route::post('/pesanan/{pesanan}/terima', [PesananTutorController::class, 'terima'])->name('pesanan.terima')->can('kelolaTutor', 'pesanan');
+            Route::post('/pesanan/{pesanan}/tolak', [PesananTutorController::class, 'tolak'])->name('pesanan.tolak')->can('kelolaTutor', 'pesanan');
+            Route::post('/pesanan/{pesanan}/batal', [PesananTutorController::class, 'batal'])->name('pesanan.batal')->can('kelolaTutor', 'pesanan');
+            Route::post('/pesanan/{pesanan}/keluhan', [KeluhanTutorController::class, 'store'])->name('pesanan.keluhan')->can('kelolaTutor', 'pesanan');
+
+            Route::get('/sesi', [SesiTutorController::class, 'index'])->name('sesi.index');
+            Route::post('/sesi/{sesi}/kehadiran', [SesiTutorController::class, 'catat'])->name('sesi.catat')->can('catat', 'sesi');
+
+            Route::get('/jadwal', [JadwalTutorController::class, 'index'])->name('jadwal.index');
+            Route::post('/jadwal', [JadwalTutorController::class, 'store'])->name('jadwal.store');
+            Route::put('/jadwal/{jadwal}', [JadwalTutorController::class, 'update'])->name('jadwal.update')->can('kelola', 'jadwal');
+            Route::delete('/jadwal/{jadwal}', [JadwalTutorController::class, 'destroy'])->name('jadwal.destroy')->can('kelola', 'jadwal');
+
+            Route::get('/profil', [ProfilSayaController::class, 'edit'])->name('profil.edit');
+            Route::put('/profil', [ProfilSayaController::class, 'update'])->name('profil.update');
+
+            Route::get('/ulasan', UlasanTutorController::class)->name('ulasan.index');
+
+            Route::get('/pendapatan', [PendapatanController::class, 'index'])->name('pendapatan.index');
+            Route::put('/pendapatan/rekening', [PendapatanController::class, 'rekening'])->name('pendapatan.rekening');
+            Route::post('/pendapatan/pencairan', [PendapatanController::class, 'ajukan'])->name('pendapatan.ajukan');
+
+            Route::get('/keluhan', [KeluhanTutorController::class, 'index'])->name('keluhan.index');
+        });
 
         Route::middleware('status-tutor:draf,perlu_perbaikan')->prefix('daftar-tutor')->name('tutor.pendaftaran.')->group(function (): void {
             Route::put('/data-diri', [PendaftaranController::class, 'dataDiri'])->name('data-diri');

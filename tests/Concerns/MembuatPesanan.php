@@ -77,7 +77,7 @@ trait MembuatPesanan
         $pesanan = $this->pesananDibayar($siswa, $tutor, ['jumlah_pertemuan' => 1, ...$ubah]);
 
         foreach ($pesanan->sesi()->get() as $sesi) {
-            app(AlurPesanan::class)->catatKehadiran($sesi, Kehadiran::Hadir);
+            app(AlurPesanan::class)->catatKehadiran($sesi, Kehadiran::Hadir, periksaWaktu: false);
         }
 
         return $pesanan->refresh();

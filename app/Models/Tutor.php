@@ -30,6 +30,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $catatan_verifikasi
  * @property array<string, string|null>|null $bagian_perbaikan
  * @property Carbon|null $diajukan_pada
+ * @property string|null $rekening_bank
+ * @property string|null $rekening_nomor
+ * @property string|null $rekening_atas_nama
  * @property float|null $rata_rating
  * @property int|null $jumlah_ulasan
  */
@@ -62,6 +65,7 @@ class Tutor extends Model
             'status_verifikasi' => StatusVerifikasiTutor::class,
             'bagian_perbaikan' => 'array',
             'diajukan_pada' => 'datetime',
+            'rekening_nomor' => 'encrypted',
         ];
     }
 
@@ -99,6 +103,19 @@ class Tutor extends Model
     public function isListed(): bool
     {
         return static::query()->tampil()->whereKey($this->getKey())->exists();
+    }
+
+    public function punyaRekening(): bool
+    {
+        return filled($this->rekening_bank) && filled($this->rekening_nomor) && filled($this->rekening_atas_nama);
+    }
+
+    /**
+     * "••••4417": the payout account number outside the admin payout page.
+     */
+    public function rekeningTersamar(): ?string
+    {
+        return filled($this->rekening_nomor) ? '••••'.substr((string) $this->rekening_nomor, -4) : null;
     }
 
     public function isInternal(): bool

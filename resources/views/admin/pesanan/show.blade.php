@@ -6,7 +6,7 @@
         <x-slot:actions><x-dasbor.status :status="$pesanan->status" class="text-[1rem]" /></x-slot:actions>
     </x-dasbor.judul>
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
         <div class="space-y-8">
             <x-dasbor.panel heading="Rincian dan biaya">
                 <x-dasbor.rincian-pesanan :pesanan="$pesanan">

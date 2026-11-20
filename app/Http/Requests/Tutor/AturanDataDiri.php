@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Tutor;
 
+use App\Http\Requests\Auth\DaftarRequest;
+
 /**
  * Name and phone rules shared by the sign-up step and the "Data diri" step.
  */
@@ -25,7 +27,7 @@ trait AturanDataDiri
     {
         return [
             'nama' => ['required', 'string', 'max:100'],
-            'no_hp' => ['required', 'string', 'regex:/^(\+62|62|0)8[0-9]{7,12}$/'],
+            'no_hp' => ['required', 'string', 'regex:'.DaftarRequest::POLA_NO_HP],
         ];
     }
 

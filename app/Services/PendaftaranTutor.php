@@ -27,6 +27,8 @@ class PendaftaranTutor
 {
     public const SERTIFIKAT_MAKS = 5;
 
+    public function __construct(private Pemberitahu $pemberitahu) {}
+
     /**
      * Folder on the public disk for profile photos.
      */
@@ -281,6 +283,8 @@ class PendaftaranTutor
             $tutor->save();
 
             $tutor->riwayatVerifikasi()->create(['status' => StatusVerifikasiTutor::Menunggu, 'id_akun' => $tutor->id_akun, 'dicatat_pada' => now()]);
+
+            $this->pemberitahu->pendaftaranTutorBaru($tutor);
         });
 
         $tutor->refresh();

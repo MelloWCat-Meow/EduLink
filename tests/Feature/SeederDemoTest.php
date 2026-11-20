@@ -9,6 +9,7 @@ use App\Enums\StatusVerifikasiTutor;
 use App\Models\AkunPengguna;
 use App\Models\DokumenVerifikasi;
 use App\Models\Pesanan;
+use App\Models\SesiPembelajaran;
 use App\Models\Tutor;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -72,6 +73,32 @@ class SeederDemoTest extends TestCase
         $this->assertSame(2, Tutor::query()->menungguVerifikasi()->count());
         $this->assertTrue(Pesanan::query()->where('status', StatusPesanan::Selesai)->whereDoesntHave('ulasan')->exists());
         $this->assertTrue(Pesanan::query()->where('status', StatusPesanan::Selesai)->whereHas('ulasan')->exists());
+    }
+
+    public function test_demo_tutors_have_orders_in_every_status_sessions_to_log_and_payouts(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $semuaStatus = collect(StatusPesanan::cases())->map->value->sort()->values()->all();
+
+        foreach (['rina.marlina@edulink.test', 'andi.pratama@edulink.test', 'dewi.anggraini@edulink.test'] as $kontak) {
+            $tutor = Tutor::query()->where('kontak', $kontak)->sole();
+            $status = $tutor->pesanan()->distinct()->pluck('status')->map->value->sort()->values()->all();
+
+            $this->assertSame($semuaStatus, $status, $kontak);
+            $this->assertTrue($tutor->punyaRekening(), $kontak);
+            $this->assertTrue($tutor->pencairan()->exists(), $kontak);
+            $this->assertNotNull($tutor->no_hp);
+        }
+
+        $rina = Tutor::query()->where('kontak', 'rina.marlina@edulink.test')->sole();
+        $this->assertTrue(SesiPembelajaran::query()->whereIn('id_pesanan', $rina->pesanan()->select('id_pesanan'))->whereNull('kehadiran')->where('waktu', '<', now())->exists());
+
+        $dewi = Tutor::query()->where('kontak', 'dewi.anggraini@edulink.test')->sole();
+        $this->assertTrue(SesiPembelajaran::query()->whereIn('id_pesanan', $dewi->pesanan()->select('id_pesanan'))->whereBetween('waktu', [now()->addDay()->startOfDay(), now()->addDay()->endOfDay()])->exists());
+
+        $this->assertSame(0, AkunPengguna::query()->where('peran', Peran::Ortu)->whereNull('no_hp')->count());
+        $this->assertSame(0, Tutor::query()->whereNull('no_hp')->count());
     }
 
     public function test_sign_up_demos_cover_every_application_state(): void

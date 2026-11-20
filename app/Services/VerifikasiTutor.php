@@ -6,34 +6,30 @@ use App\Enums\LangkahPendaftaran;
 use App\Enums\StatusVerifikasi;
 use App\Enums\StatusVerifikasiTutor;
 use App\Exceptions\AksiDitolak;
-use App\Jobs\SinkronTutorKeEduManage;
 use App\Mail\KeputusanVerifikasiTutor;
 use App\Models\AkunPengguna;
 use App\Models\Tutor;
 use Closure;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * The admin's three decisions on an application that is waiting (menunggu).
  * Each one is recorded in riwayat_verifikasi_tutor (who, when, note) and
- * emailed to the tutor. Approval also hands the tutor to EduManage.
+ * sent to the tutor as a notification that carries the decision email.
  */
 class VerifikasiTutor
 {
+    public function __construct(private Pemberitahu $pemberitahu) {}
+
     /**
      * Every document becomes valid and the profile is listed in search.
      */
     public function setujui(Tutor $tutor, AkunPengguna $admin, ?string $catatan = null): Tutor
     {
-        $tutor = $this->putuskan($tutor, $admin, StatusVerifikasiTutor::Terverifikasi, $catatan, [], function (Tutor $tutor): void {
+        return $this->putuskan($tutor, $admin, StatusVerifikasiTutor::Terverifikasi, $catatan, [], function (Tutor $tutor): void {
             $tutor->dokumen()->where('status_verifikasi', '!=', StatusVerifikasi::Valid)
                 ->update(['status_verifikasi' => StatusVerifikasi::Valid, 'alasan_penolakan' => null, 'diperiksa_pada' => now(), 'updated_at' => now()]);
         });
-
-        SinkronTutorKeEduManage::dispatch($tutor->id_tutor);
-
-        return $tutor;
     }
 
     /**
@@ -119,7 +115,7 @@ class VerifikasiTutor
             return $tutor;
         });
 
-        Mail::to($tutor->kontak, $tutor->nama)->send(new KeputusanVerifikasiTutor($tutor, $keputusan, $catatan, $bagian));
+        $this->pemberitahu->keputusanVerifikasi($tutor, $keputusan, new KeputusanVerifikasiTutor($tutor, $keputusan, $catatan, $bagian));
 
         return $tutor;
     }

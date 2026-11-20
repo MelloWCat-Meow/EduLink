@@ -1,4 +1,4 @@
-@props(['pesanan'])
+@props(['pesanan', 'untukTutor' => false])
 
 @use('App\Support\Format')
 
@@ -8,7 +8,11 @@
 
 <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
     <div><dt class="text-[0.875rem] text-pensil-muda">Anak</dt><dd class="font-bold">{{ $pesanan->siswa->nama }} ({{ $pesanan->siswa->jenjang }})</dd></div>
-    <div><dt class="text-[0.875rem] text-pensil-muda">Tutor</dt><dd class="font-bold">{{ $pesanan->tutor->nama }}</dd></div>
+    @if ($untukTutor)
+        <div><dt class="text-[0.875rem] text-pensil-muda">Jumlah pertemuan</dt><dd class="font-bold">{{ $pesanan->jumlah_pertemuan }} kali</dd></div>
+    @else
+        <div><dt class="text-[0.875rem] text-pensil-muda">Tutor</dt><dd class="font-bold">{{ $pesanan->tutor->nama }}</dd></div>
+    @endif
     <div><dt class="text-[0.875rem] text-pensil-muda">Mapel</dt><dd class="font-bold">{{ $pesanan->mapel->label() }}</dd></div>
     <div><dt class="text-[0.875rem] text-pensil-muda">Cara belajar</dt><dd class="font-bold">{{ $pesanan->mode->label() }}</dd></div>
     <div><dt class="text-[0.875rem] text-pensil-muda">Jadwal mingguan</dt><dd class="font-bold">{{ $pesanan->jadwal->label() }} WIB, {{ $pesanan->durasi }} menit</dd></div>

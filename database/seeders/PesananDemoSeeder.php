@@ -109,18 +109,103 @@ class PesananDemoSeeder extends Seeder
         // Just placed, waiting for the tutor.
         $this->pesan($nadia, $siti, 'Sari Wulandari', 'BIN-SD', Hari::Kamis, ModeBelajar::KunjunganRumah, 60, 8, $this->sekarang->copy()->subMinutes(40));
 
+        $this->dasborRina($nadia, $raka, $siti);
+        $this->dasborAndi($raka, $dimas, $siti, $budi);
+        $this->dasborDewi($raka, $dimas, $siti, $budi);
+
         $this->alurPesanan->lepasPenahananKedaluwarsa();
 
         $this->pencairan('Fadli Ramadhan', $this->hariLalu(25), 500000, StatusPencairan::Dibayar);
+        $this->pencairan('Rina Marlina', $this->hariLalu(20), 250000, StatusPencairan::Dibayar);
         $this->pencairan('Rina Marlina', $this->hariLalu(1), 400000, StatusPencairan::Menunggu);
+        $this->pencairan('Andi Pratama', $this->hariLalu(15), 150000, StatusPencairan::Dibayar);
+        $this->pencairan('Dewi Anggraini', $this->hariLalu(5), 150000, StatusPencairan::Disetujui);
 
         Carbon::setTestNow();
     }
 
-    private function pesan(Siswa $siswa, AkunPengguna $wali, string $namaTutor, string $kodeMapel, Hari $hari, ModeBelajar $mode, int $durasi, int $jumlahPertemuan, Carbon $dibuat): Pesanan
+    /**
+     * Rina's dashboard: a fresh request to answer, a paid order with one past
+     * session still to log, a rejection and a cancellation of her own.
+     */
+    private function dasborRina(Siswa $nadia, Siswa $raka, AkunPengguna $siti): void
+    {
+        $rina = $this->akunTutor('Rina Marlina');
+
+        $ditolak = $this->pesan($raka, $siti, 'Rina Marlina', 'MTK-SMP', Hari::Senin, ModeBelajar::KunjunganRumah, 90, 8, $this->hariLalu(30));
+        $this->pada($this->hariLalu(30)->addHours(6), fn () => $this->alurPesanan->tolak($ditolak, 'Ditolak tutor: kunjungan ke Kota Baru pada Senin sore belum bisa.', $rina));
+
+        $dibatalkan = $this->pesan($nadia, $siti, 'Rina Marlina', 'IPA-SD', Hari::Senin, ModeBelajar::Online, 60, 4, $this->hariLalu(25));
+        $this->pada($this->hariLalu(25)->addHours(2), fn () => $this->alurPesanan->terima($dibatalkan, $rina));
+        $this->pada($this->hariLalu(25)->addHours(5), fn () => $this->alurPesanan->batalkanOlehTutor($dibatalkan, 'Jadwal mengajar di sekolah berubah mulai bulan ini.', $rina));
+
+        $berjalan = $this->pesan($nadia, $siti, 'Rina Marlina', 'IPA-SD', Hari::Rabu, ModeBelajar::Online, 60, 6, $this->hariLalu(22));
+        $this->terimaDanBayar($berjalan, MetodePembayaran::EWallet);
+        $this->hadiriSesiYangLewat($berjalan, sisakanTerakhir: true);
+
+        $this->pesan($nadia, $siti, 'Rina Marlina', 'MTK-SD', Hari::Senin, ModeBelajar::Online, 60, 4, $this->sekarang->copy()->subHours(2));
+    }
+
+    /**
+     * Andi's dashboard: every status, including one waiting for payment.
+     */
+    private function dasborAndi(Siswa $raka, Siswa $dimas, AkunPengguna $siti, AkunPengguna $budi): void
+    {
+        $andi = $this->akunTutor('Andi Pratama');
+
+        $selesai = $this->pesan($dimas, $budi, 'Andi Pratama', 'BIG-SMA', Hari::Jumat, ModeBelajar::Online, 60, 4, $this->hariLalu(60));
+        $this->jalankanSampaiSelesai($selesai);
+        $this->ulas($selesai, 5, 'Latihan percakapannya seru, Dimas jadi tidak malu bicara.');
+
+        $ditolak = $this->pesan($raka, $siti, 'Andi Pratama', 'BIG-SMP', Hari::Jumat, ModeBelajar::Online, 120, 8, $this->hariLalu(30));
+        $this->pada($this->hariLalu(30)->addHours(3), fn () => $this->alurPesanan->tolak($ditolak, 'Ditolak tutor: durasi 2 jam terlalu panjang untuk kelas malam.', $andi));
+
+        $dibatalkan = $this->pesan($dimas, $budi, 'Andi Pratama', 'BIG-SMA', Hari::Jumat, ModeBelajar::Online, 60, 4, $this->hariLalu(20));
+        $this->pada($this->hariLalu(20)->addHours(2), fn () => $this->alurPesanan->terima($dibatalkan, $andi));
+        $this->pada($this->hariLalu(20)->addHours(6), fn () => $this->alurPesanan->batalkanOlehTutor($dibatalkan, 'Sedang sakit dan belum bisa mengajar dua minggu ke depan.', $andi));
+
+        $this->pesan($raka, $siti, 'Andi Pratama', 'BIG-SMP', Hari::Jumat, ModeBelajar::Online, 60, 4, $this->sekarang->copy()->subHour());
+
+        $menungguBayar = $this->pesan($dimas, $budi, 'Andi Pratama', 'BIG-SMA', Hari::Sabtu, ModeBelajar::Online, 90, 4, $this->sekarang->copy()->subHours(5));
+        $this->pada($this->sekarang->copy()->subHours(4), fn () => $this->alurPesanan->terima($menungguBayar, $andi));
+    }
+
+    /**
+     * Dewi's dashboard: a paid order with a session tomorrow (for the
+     * day-before reminder), plus finished, rejected, waiting orders.
+     */
+    private function dasborDewi(Siswa $raka, Siswa $dimas, AkunPengguna $siti, AkunPengguna $budi): void
+    {
+        $dewi = $this->akunTutor('Dewi Anggraini');
+        $besok = Hari::fromIsoWeekday($this->sekarang->copy()->addDay()->isoWeekday());
+        Tutor::query()->where('nama', 'Dewi Anggraini')->firstOrFail()->jadwal()->create(['hari' => $besok, 'jam' => '17:00:00', 'status' => 'tersedia']);
+
+        $selesai = $this->pesan($raka, $siti, 'Dewi Anggraini', 'IPA-SMP', Hari::Senin, ModeBelajar::Online, 60, 4, $this->hariLalu(50));
+        $this->jalankanSampaiSelesai($selesai);
+        $this->ulas($selesai, 4, 'Materi IPA dijelaskan dengan percobaan sederhana di rumah.');
+
+        $ditolak = $this->pesan($dimas, $budi, 'Dewi Anggraini', 'BIO-SMA', Hari::Jumat, ModeBelajar::KunjunganRumah, 60, 4, $this->hariLalu(35));
+        $this->pada($this->hariLalu(35)->addHours(4), fn () => $this->alurPesanan->tolak($ditolak, 'Ditolak tutor: rumah siswa di luar wilayah kunjungan saya.', $dewi));
+
+        $berjalan = $this->pesan($dimas, $budi, 'Dewi Anggraini', 'BIO-SMA', $besok, ModeBelajar::Online, 60, 4, $this->hariLalu(8), '17:00:00');
+        $this->terimaDanBayar($berjalan, MetodePembayaran::VirtualAccount);
+        $this->hadiriSesiYangLewat($berjalan);
+
+        $menungguBayar = $this->pesan($raka, $siti, 'Dewi Anggraini', 'IPA-SMP', Hari::Jumat, ModeBelajar::Online, 60, 4, $this->sekarang->copy()->subHours(5));
+        $this->pada($this->sekarang->copy()->subHours(3), fn () => $this->alurPesanan->terima($menungguBayar, $dewi));
+
+        $this->pesan($raka, $siti, 'Dewi Anggraini', 'IPA-SMP', Hari::Senin, ModeBelajar::Online, 60, 4, $this->sekarang->copy()->subMinutes(30));
+    }
+
+    private function akunTutor(string $nama): AkunPengguna
+    {
+        return Tutor::query()->with('akun')->where('nama', $nama)->firstOrFail()->akun;
+    }
+
+    private function pesan(Siswa $siswa, AkunPengguna $wali, string $namaTutor, string $kodeMapel, Hari $hari, ModeBelajar $mode, int $durasi, int $jumlahPertemuan, Carbon $dibuat, ?string $jam = null): Pesanan
     {
         $tutor = Tutor::query()->with('profil')->where('nama', $namaTutor)->firstOrFail();
-        $jadwal = JadwalKetersediaan::query()->where('id_tutor', $tutor->id_tutor)->where('hari', $hari)->firstOrFail();
+        $jadwal = JadwalKetersediaan::query()->where('id_tutor', $tutor->id_tutor)->where('hari', $hari)->when($jam, fn ($query) => $query->where('jam', $jam))->firstOrFail();
         $mulai = $dibuat->copy()->addDays(2)->startOfDay();
 
         while ($mulai->isoWeekday() !== $hari->isoWeekday()) {
@@ -155,10 +240,16 @@ class PesananDemoSeeder extends Seeder
         $this->hadiriSesiYangLewat($pesanan);
     }
 
-    private function hadiriSesiYangLewat(Pesanan $pesanan): void
+    /**
+     * Logs every past session; with $sisakanTerakhir the latest one is left
+     * for the tutor to log from the dashboard.
+     */
+    private function hadiriSesiYangLewat(Pesanan $pesanan, bool $sisakanTerakhir = false): void
     {
-        $pesanan->sesi()->orderBy('waktu')->get()
-            ->filter(fn ($sesi) => $sesi->waktu->copy()->addHours(2)->lessThan($this->sekarang))
+        $lewat = $pesanan->sesi()->orderBy('waktu')->get()
+            ->filter(fn ($sesi) => $sesi->waktu->copy()->addHours(2)->lessThan($this->sekarang));
+
+        ($sisakanTerakhir ? $lewat->slice(0, -1) : $lewat)
             ->each(fn ($sesi) => $this->pada($sesi->waktu->copy()->addHours(2), fn () => $this->alurPesanan->catatKehadiran($sesi, Kehadiran::Hadir, 'Materi sesuai rencana.')));
     }
 
