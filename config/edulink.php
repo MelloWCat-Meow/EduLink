@@ -10,7 +10,7 @@ return [
     | While true, outside services are simulated so the whole flow can be shown
     | on any host, even with APP_ENV=production: the payment gateway page and
     | its webhook, the tutor and session simulation commands, and activation
-    | and password reset links shown on screen. A banner on every page says so.
+    | and password reset links shown on screen.
     | Defaults to on for local and testing, off everywhere else.
     |
     */
