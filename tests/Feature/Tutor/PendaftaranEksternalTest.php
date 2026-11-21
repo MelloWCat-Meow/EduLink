@@ -38,7 +38,7 @@ class PendaftaranEksternalTest extends TestCase
             'kontak' => 'Galih@Contoh.com',
             'no_hp' => '0812-3456 7890',
             'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
+            'password_confirmation' => 'rahasia123', 'setuju' => '1',
         ];
     }
 

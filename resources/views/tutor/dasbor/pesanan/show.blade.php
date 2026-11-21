@@ -84,6 +84,7 @@
                                 @else
                                     <x-dasbor.label>Belum dimulai</x-dasbor.label>
                                 @endif
+                                <x-dasbor.jadwal-ulang :sesi="$sesi" :pesanan="$pesanan" class="basis-full" />
                             </li>
                         @endforeach
                     </ol>
@@ -102,6 +103,8 @@
 
         <div class="space-y-8">
             @include('tutor.dasbor.pesanan._kontak')
+
+            <x-dasbor.pengembalian :pengembalian="$pesanan->pengembalianDana" :pesanan="$pesanan" />
 
             <x-dasbor.panel heading="Riwayat status">
                 <ol class="space-y-3">

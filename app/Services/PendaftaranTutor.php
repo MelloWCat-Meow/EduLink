@@ -44,6 +44,7 @@ class PendaftaranTutor
         return DB::transaction(function () use ($data): Tutor {
             $akun = new AkunPengguna(['nama' => $data['nama'], 'kontak' => $data['kontak'], 'kredensial' => $data['password']]);
             $akun->peran = Peran::Tutor;
+            $akun->catatPersetujuan();
             $akun->save();
 
             $tutor = new Tutor([

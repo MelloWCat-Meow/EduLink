@@ -92,11 +92,13 @@
                 </ol>
             </x-dasbor.panel>
 
+            <x-dasbor.pengembalian :pengembalian="$pesanan->pengembalianDana" :pesanan="$pesanan" />
+
             @unless ($pesanan->status->isFinal())
                 <x-dasbor.panel heading="Batalkan pesanan">
                     <form method="post" action="{{ route('admin.pesanan.batal', $pesanan) }}" novalidate onsubmit="return confirm('Batalkan pesanan {{ $pesanan->id_pesanan }}?')">
                         @csrf
-                        <x-dasbor.field name="alasan" label="Alasan" hint="Tercatat di riwayat dan terlihat oleh orang tua. Pengembalian dana untuk pesanan yang sudah dibayar diurus di luar sistem.">
+                        <x-dasbor.field name="alasan" label="Alasan" hint="Tercatat di riwayat dan terlihat oleh orang tua. Untuk pesanan yang sudah dibayar, pengembalian dana sesi yang belum terlaksana dicatat otomatis dan muncul di halaman Pengembalian dana.">
                             <textarea id="isian-alasan" name="alasan" maxlength="255" class="kontrol" aria-describedby="isian-alasan-petunjuk @error('alasan') isian-alasan-galat @enderror" @error('alasan') aria-invalid="true" @enderror>{{ old('alasan') }}</textarea>
                         </x-dasbor.field>
                         <button type="submit" class="tombol-garis tombol-bahaya mt-3">Batalkan pesanan</button>

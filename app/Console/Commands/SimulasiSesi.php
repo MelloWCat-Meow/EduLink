@@ -14,12 +14,12 @@ use Illuminate\Console\Command;
  * Stands in for the tutor logging attendance after a session. Local only.
  */
 #[Signature('edulink:simulasi-sesi {id_sesi : Nomor sesi, mis. SES0001} {kehadiran : hadir atau tidak_hadir} {--catatan= : Catatan tutor tentang sesi}')]
-#[Description('Simulasi tutor mencatat kehadiran sesi (khusus lokal)')]
+#[Description('Simulasi tutor mencatat kehadiran sesi (khusus mode demo)')]
 class SimulasiSesi extends Command
 {
     public function isEnabled(): bool
     {
-        return ! app()->isProduction();
+        return (bool) config('edulink.mode_demo');
     }
 
     public function handle(AlurPesanan $alurPesanan): int

@@ -17,7 +17,7 @@ class BayarController extends Controller
      */
     public function __invoke(BayarRequest $request, Pesanan $pesanan, PemrosesPembayaran $pemroses): RedirectResponse
     {
-        abort_if(app()->isProduction(), 503, 'Payment gateway belum tersambung.');
+        abort_unless(config('edulink.mode_demo'), 503, 'Payment gateway belum tersambung.');
 
         $pembayaran = $pemroses->mulai($pesanan, MetodePembayaran::from($request->input('metode')));
 

@@ -28,6 +28,7 @@
             <h2 class="font-tangan text-[1.3rem] text-stabilo">Informasi</h2>
             <ul class="mt-1">
                 <li><a href="{{ route('privacy') }}" class="inline-flex min-h-11 items-center underline-offset-4 hover:underline">Kebijakan privasi</a></li>
+                <li><a href="{{ route('syarat') }}" class="inline-flex min-h-11 items-center underline-offset-4 hover:underline">Syarat dan ketentuan</a></li>
                 <li><a href="{{ route('tutor.register') }}" class="inline-flex min-h-11 items-center underline-offset-4 hover:underline">Daftar jadi tutor</a></li>
                 <li><a href="{{ route('login') }}" class="inline-flex min-h-11 items-center underline-offset-4 hover:underline">Masuk</a></li>
             </ul>

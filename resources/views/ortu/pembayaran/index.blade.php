@@ -3,6 +3,25 @@
 <x-dasbor.layout title="Pembayaran">
     <x-dasbor.judul title="Pembayaran" note="semua percobaan bayar, termasuk yang gagal" />
 
+    @if ($daftarPengembalian->isNotEmpty())
+        <x-dasbor.panel heading="Pengembalian dana" class="mb-8">
+            <ul class="divide-y divide-pensil/12">
+                @foreach ($daftarPengembalian as $pengembalian)
+                    <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+                        <div>
+                            <p class="font-bold"><a href="{{ route('pesanan.show', $pengembalian->id_pesanan) }}" class="tautan angka">{{ $pengembalian->id_pesanan }}</a> · {{ $pengembalian->pesanan->mapel->label() }} dengan {{ $pengembalian->pesanan->tutor->nama }}</p>
+                            <p class="text-[0.875rem] text-pensil-muda">dicatat {{ Format::tanggalPendek($pengembalian->created_at) }}@if ($pengembalian->catatan) · {{ $pengembalian->catatan }}@endif</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="angka font-bold">{{ Format::rupiah($pengembalian->nominal) }}</span>
+                            <x-dasbor.label :tone="$pengembalian->status->tone()">{{ $pengembalian->status->label() }}</x-dasbor.label>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        </x-dasbor.panel>
+    @endif
+
     <x-dasbor.panel>
         @if ($daftarPembayaran->isEmpty())
             <x-dasbor.kosong message="Belum ada pembayaran. Tagihan muncul setelah tutor menerima pesanan." />

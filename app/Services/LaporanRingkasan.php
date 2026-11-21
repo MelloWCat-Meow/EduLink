@@ -8,6 +8,7 @@ use App\Enums\StatusPesanan;
 use App\Models\Keluhan;
 use App\Models\KomisiBiayaLayanan;
 use App\Models\Pembayaran;
+use App\Models\PengembalianDana;
 use App\Models\Pesanan;
 use App\Models\Tutor;
 use Illuminate\Support\Carbon;
@@ -59,7 +60,14 @@ class LaporanRingkasan
             ->selectRaw('COUNT(*) as jumlah, COALESCE(SUM(jumlah), 0) as total')
             ->first();
 
+        // A cancelled paid order's commission row is lowered to the sessions held,
+        // so this is commission actually kept, counted in the month it was paid.
         $komisi = KomisiBiayaLayanan::query()->whereBetween('created_at', $rentang)->sum('nominal');
+
+        // Refunds by the month the admin cancelled the order (when the debt arose).
+        $pengembalian = PengembalianDana::query()->whereBetween('created_at', $rentang)
+            ->selectRaw('COUNT(*) as jumlah, COALESCE(SUM(nominal), 0) as total')
+            ->first();
 
         $pesananNyata = fn ($pesanan) => $pesanan
             ->whereBetween('created_at', $rentang)
@@ -78,6 +86,8 @@ class LaporanRingkasan
             'total_transaksi' => bcadd((string) $transaksi->total, '0', 2),
             'jumlah_transaksi' => (int) $transaksi->jumlah,
             'pendapatan_komisi' => bcadd((string) $komisi, '0', 2),
+            'total_pengembalian' => bcadd((string) $pengembalian->total, '0', 2),
+            'jumlah_pengembalian' => (int) $pengembalian->jumlah,
             'tutor_menunggu_verifikasi' => Tutor::query()->menungguVerifikasi()->count(),
             'keluhan_terbuka' => Keluhan::query()->whereIn('status', [StatusKeluhan::Baru, StatusKeluhan::Diproses])->count(),
             'tutor_terlaris' => Tutor::query()

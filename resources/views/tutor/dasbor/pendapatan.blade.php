@@ -4,14 +4,14 @@
 @php($adaMenunggu = $riwayatPencairan->contains('status', StatusPencairan::Menunggu))
 
 <x-dasbor.layout title="Pendapatan">
-    <x-dasbor.judul title="Pendapatan dan pencairan" note="saldo = pembayaran berhasil − komisi − pencairan yang disetujui atau dibayar" />
+    <x-dasbor.judul title="Pendapatan dan pencairan" note="saldo = pembayaran berhasil − pengembalian dana − komisi − pencairan yang disetujui atau dibayar" />
 
     <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
         <div class="space-y-8">
             <x-dasbor.panel heading="Saldo tersedia">
                 <p class="angka font-display text-[2.2rem] font-extrabold">{{ Format::rupiah($saldo['saldo']) }}</p>
                 <dl class="mt-3 grid gap-x-6 gap-y-1 text-[0.9375rem] sm:grid-cols-3">
-                    <div><dt class="text-pensil-muda">Pembayaran masuk</dt><dd class="angka font-bold">{{ Format::rupiah($saldo['pendapatan']) }}</dd></div>
+                    <div><dt class="text-pensil-muda">Pembayaran masuk (setelah pengembalian)</dt><dd class="angka font-bold">{{ Format::rupiah($saldo['pendapatan']) }}</dd></div>
                     <div><dt class="text-pensil-muda">Komisi EduLink</dt><dd class="angka font-bold">− {{ Format::rupiah($saldo['komisi']) }}</dd></div>
                     <div><dt class="text-pensil-muda">Sudah dicairkan</dt><dd class="angka font-bold">− {{ Format::rupiah($saldo['dicairkan']) }}</dd></div>
                 </dl>
@@ -23,12 +23,13 @@
                 @else
                     <div class="overflow-x-auto">
                         <table class="tabel">
-                            <thead><tr><th scope="col">Pesanan</th><th scope="col" class="text-right">Total</th><th scope="col" class="text-right">Komisi</th><th scope="col" class="text-right">Bersih</th></tr></thead>
+                            <thead><tr><th scope="col">Pesanan</th><th scope="col" class="text-right">Total</th><th scope="col" class="text-right">Dikembalikan</th><th scope="col" class="text-right">Komisi</th><th scope="col" class="text-right">Bersih</th></tr></thead>
                             <tbody>
                                 @foreach ($rincian as $baris)
                                     <tr>
                                         <td><a href="{{ route('tutor.pesanan.show', $baris['pesanan']) }}" class="tautan angka">{{ $baris['pesanan']->id_pesanan }}</a><span class="block text-[0.8125rem] text-pensil-muda">{{ $baris['pesanan']->mapel->label() }} · {{ $baris['pesanan']->siswa->nama }} · {{ $baris['pesanan']->status->label() }}</span></td>
                                         <td class="angka text-right">{{ Format::rupiah($baris['total']) }}</td>
+                                        <td class="angka text-right">{{ bccomp($baris['pengembalian'], '0', 2) === 1 ? '− '.Format::rupiah($baris['pengembalian']) : '–' }}</td>
                                         <td class="angka text-right">− {{ Format::rupiah($baris['komisi']) }}</td>
                                         <td class="angka text-right font-bold">{{ Format::rupiah($baris['bersih']) }}</td>
                                     </tr>

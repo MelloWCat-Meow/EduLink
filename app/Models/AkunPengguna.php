@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
 /**
  * A sign-in account (Akun_Pengguna). `kontak` holds the email used to sign in
@@ -23,6 +24,11 @@ use Illuminate\Notifications\Notifiable;
  * @property Peran $peran
  * @property string $kontak
  * @property string|null $no_hp
+ * @property Carbon|null $persetujuan_pada
+ * @property string|null $versi_kebijakan
+ * @property bool $aktif
+ * @property Carbon|null $dinonaktifkan_pada
+ * @property string|null $alasan_nonaktif
  * @property string $nama
  */
 #[Fillable(['nama', 'kontak', 'no_hp', 'kredensial'])]
@@ -40,6 +46,15 @@ class AkunPengguna extends Authenticatable
 
     protected $keyType = 'string';
 
+    /**
+     * Matches the column default, so a new account is active before it is reloaded.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'aktif' => true,
+    ];
+
     public function keyPrefix(): string
     {
         return 'AK';
@@ -55,6 +70,9 @@ class AkunPengguna extends Authenticatable
         return [
             'peran' => Peran::class,
             'kredensial' => 'hashed',
+            'persetujuan_pada' => 'datetime',
+            'aktif' => 'boolean',
+            'dinonaktifkan_pada' => 'datetime',
         ];
     }
 
@@ -78,6 +96,25 @@ class AkunPengguna extends Authenticatable
         return [$this->kontak => $this->nama];
     }
 
+    /**
+     * The password broker identifies accounts by their sign-in email.
+     */
+    public function getEmailForPasswordReset(): string
+    {
+        return $this->kontak;
+    }
+
+    /**
+     * Records agreement to the current Terms and Privacy Policy (not saved yet).
+     */
+    public function catatPersetujuan(): static
+    {
+        $this->persetujuan_pada = now();
+        $this->versi_kebijakan = config('edulink.versi_kebijakan');
+
+        return $this;
+    }
+
     public function hasPeran(Peran $peran): bool
     {
         return $this->peran === $peran;
@@ -91,6 +128,14 @@ class AkunPengguna extends Authenticatable
     public function siswa(): HasMany
     {
         return $this->hasMany(Siswa::class, 'id_akun', 'id_akun');
+    }
+
+    /**
+     * @return HasMany<RiwayatStatusAkun, $this>
+     */
+    public function riwayatStatus(): HasMany
+    {
+        return $this->hasMany(RiwayatStatusAkun::class, 'id_akun', 'id_akun');
     }
 
     /**

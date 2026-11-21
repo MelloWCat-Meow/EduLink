@@ -20,6 +20,7 @@
             </div>
             <x-auth.field name="password" label="Kata sandi" type="password" autocomplete="new-password" required minlength="8" hint="Minimal 8 karakter." autofocus />
             <x-auth.field name="password_confirmation" label="Ulangi kata sandi" type="password" autocomplete="new-password" required minlength="8" />
+            <x-auth.persetujuan />
             <div class="pt-2">@include('tutor.pendaftaran._tombol', ['teksTombol' => 'Aktifkan akun'])</div>
         </form>
     </x-auth.sheet>

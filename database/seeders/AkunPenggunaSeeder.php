@@ -21,7 +21,7 @@ class AkunPenggunaSeeder extends Seeder
         ];
 
         foreach ($accounts as $account) {
-            AkunPengguna::forceCreate($account);
+            AkunPengguna::forceCreate($account + ['persetujuan_pada' => now(), 'versi_kebijakan' => config('edulink.versi_kebijakan')]);
         }
     }
 }
