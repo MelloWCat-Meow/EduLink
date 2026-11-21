@@ -11,6 +11,7 @@
             <x-auth.field name="no_hp" label="Nomor HP (WhatsApp)" type="tel" autocomplete="tel" inputmode="tel" required maxlength="20" hint="Misalnya 0812 3456 7890." />
             <x-auth.field name="password" label="Kata sandi" type="password" autocomplete="new-password" required minlength="8" hint="Minimal 8 karakter." />
             <x-auth.field name="password_confirmation" label="Ulangi kata sandi" type="password" autocomplete="new-password" required minlength="8" />
+            <x-auth.persetujuan />
 
             <div class="flex flex-wrap items-center gap-x-6 gap-y-4 pt-2">
                 @include('tutor.pendaftaran._tombol', ['teksTombol' => 'Buat akun dan lanjut'])

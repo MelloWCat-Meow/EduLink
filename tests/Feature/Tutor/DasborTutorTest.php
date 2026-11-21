@@ -264,7 +264,7 @@ class DasborTutorTest extends TestCase
 
         $this->assertSame($sebelum, $this->tutor->mataPelajaran()->pluck('mata_pelajaran.kode_mapel')->all());
         $this->actingAs($this->akun)->get(route('tutor.profil.edit'))
-            ->assertSeeText('Hubungi admin untuk mengubah mata pelajaran.')
+            ->assertSeeText('hanya admin yang bisa mengubahnya')
             ->assertDontSee('name="mapel[]"', false);
     }
 

@@ -1,7 +1,8 @@
 <x-dasbor.layout title="Akun saya">
     <x-dasbor.judul title="Akun saya" note="nama dan nomor HP yang dilihat tutor setelah pesanan dibayar" />
 
-    <x-dasbor.panel class="max-w-[38rem]">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-2 lg:items-start">
+    <x-dasbor.panel heading="Data akun">
         <form method="POST" action="{{ route('akun.update') }}" novalidate class="space-y-5">
             @csrf
             @method('PUT')
@@ -20,4 +21,7 @@
             <button type="submit" class="tombol">Simpan</button>
         </form>
     </x-dasbor.panel>
+
+    <x-dasbor.form-kata-sandi />
+    </div>
 </x-dasbor.layout>

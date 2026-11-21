@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\Kehadiran;
 use App\Enums\ModeBelajar;
 use App\Enums\StatusJadwal;
+use App\Enums\StatusPengembalian;
 use App\Enums\StatusPesanan;
 use App\Exceptions\JadwalTerisi;
 use App\Exceptions\TransisiStatusTidakSah;
@@ -12,6 +13,7 @@ use App\Models\AkunPengguna;
 use App\Models\JadwalKetersediaan;
 use App\Models\MataPelajaran;
 use App\Models\Pengaturan;
+use App\Models\PengembalianDana;
 use App\Models\Pesanan;
 use App\Models\SesiPembelajaran;
 use App\Models\Siswa;
@@ -151,15 +153,93 @@ class AlurPesanan
     }
 
     /**
-     * Admins may cancel any order that is not finished yet, with a recorded reason.
+     * An admin switched off one side's account: an order still waiting for
+     * the tutor or for payment is cancelled and its slot freed. Paid orders
+     * are left alone; the admin handles them with a cancellation and refund.
+     *
+     * @param  'tutor'|'ortu'  $pihak  whose account was switched off
+     */
+    public function batalkanKarenaAkunNonaktif(Pesanan $pesanan, string $pihak, AkunPengguna $oleh): bool
+    {
+        return $this->denganKunci($pesanan, function (Pesanan $pesanan) use ($pihak, $oleh): bool {
+            if (! $pesanan->status->holdsSlot()) {
+                return false;
+            }
+
+            $this->pindah($pesanan, StatusPesanan::Batal, 'Dibatalkan otomatis: akun '.($pihak === 'tutor' ? 'tutor' : 'orang tua').' dinonaktifkan admin.', $oleh);
+            $this->lepasSlot($pesanan);
+            $this->pemberitahu->pesananDibatalkanKarenaAkun($pesanan, $pihak);
+
+            return true;
+        });
+    }
+
+    /**
+     * Admins may cancel any order that is not finished yet, with a recorded
+     * reason. A paid order also gets a refund for the sessions not held.
      */
     public function batalkanOlehAdmin(Pesanan $pesanan, string $alasan, AkunPengguna $oleh): void
     {
         $this->denganKunci($pesanan, function (Pesanan $pesanan) use ($alasan, $oleh): void {
+            $sudahDibayar = $pesanan->status === StatusPesanan::Dibayar;
+
             $this->pindah($pesanan, StatusPesanan::Batal, 'Dibatalkan admin: '.$alasan, $oleh);
             $this->lepasSlot($pesanan);
-            $this->pemberitahu->pesananDibatalkan($pesanan, 'admin', 'Alasan: '.$alasan);
+
+            $keterangan = 'Alasan: '.$alasan;
+
+            if ($sudahDibayar) {
+                $pengembalian = $this->catatPengembalian($pesanan);
+                $keterangan .= ' Dana yang dikembalikan: '.Format::rupiah($pengembalian->nominal).' untuk '.($pesanan->jumlah_pertemuan - $pengembalian->sesi_terlaksana).' sesi yang belum terlaksana.';
+                $this->catatRiwayat($pesanan, 'Pengembalian dana '.Format::rupiah($pengembalian->nominal).' dicatat dan menunggu diproses admin.', $oleh);
+            }
+
+            $this->pemberitahu->pesananDibatalkan($pesanan, 'admin', $keterangan);
         });
+    }
+
+    /**
+     * Refund = total x (sessions not held / meetings), rounded to whole rupiah.
+     * The tutor keeps the sessions already held, so the commission row is
+     * lowered to the same share, at the percentage charged when paid. A
+     * logged session counts as held whether the student came or not.
+     */
+    private function catatPengembalian(Pesanan $pesanan): PengembalianDana
+    {
+        $jumlah = max(1, $pesanan->jumlah_pertemuan);
+        $terlaksana = $pesanan->sesi()->whereNotNull('kehadiran')->count();
+        $belum = $jumlah - $terlaksana;
+
+        $nominal = self::bulatkanRupiah(bcdiv(bcmul((string) $pesanan->total_biaya, (string) $belum, 4), (string) $jumlah, 4));
+
+        $komisi = $pesanan->komisi()->first();
+
+        if ($komisi !== null) {
+            $kotor = bcsub((string) $pesanan->total_biaya, $nominal, 2);
+            $komisi->update([
+                'nominal_sebelum_pengembalian' => $komisi->nominal,
+                'nominal' => self::bulatkanRupiah(bcdiv(bcmul($kotor, (string) $komisi->persentase, 4), '100', 4)),
+            ]);
+        }
+
+        $pengembalian = new PengembalianDana([
+            'id_pesanan' => $pesanan->id_pesanan,
+            'nominal' => $nominal,
+            'sesi_terlaksana' => $terlaksana,
+            'status' => bccomp($nominal, '0', 2) === 0 ? StatusPengembalian::Selesai : StatusPengembalian::PerluDiproses,
+            'catatan' => bccomp($nominal, '0', 2) === 0 ? 'Semua sesi sudah terlaksana, tidak ada dana yang perlu dikembalikan.' : null,
+        ]);
+        $pengembalian->save();
+
+        return $pengembalian;
+    }
+
+    /**
+     * Half up to whole rupiah, kept with two decimals like other amounts.
+     */
+    private static function bulatkanRupiah(string $angka): string
+    {
+        return bcadd(bcadd($angka, '0.5', 0), '0', 2);
     }
 
     /**

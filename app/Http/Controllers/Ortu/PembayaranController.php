@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Ortu;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pembayaran;
+use App\Models\PengembalianDana;
 use App\Models\Pesanan;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,6 +20,12 @@ class PembayaranController extends Controller
             ->orderByDesc('id_pembayaran')
             ->paginate(10);
 
-        return view('ortu.pembayaran.index', ['daftarPembayaran' => $daftarPembayaran]);
+        $daftarPengembalian = PengembalianDana::query()
+            ->whereIn('id_pesanan', Pesanan::query()->milikAkun($request->user()->id_akun)->select('id_pesanan'))
+            ->with(['pesanan.tutor', 'pesanan.mapel'])
+            ->latest()
+            ->get();
+
+        return view('ortu.pembayaran.index', ['daftarPembayaran' => $daftarPembayaran, 'daftarPengembalian' => $daftarPengembalian]);
     }
 }

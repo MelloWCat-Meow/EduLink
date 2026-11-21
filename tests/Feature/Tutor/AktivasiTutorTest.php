@@ -51,6 +51,9 @@ class AktivasiTutorTest extends TestCase
 
     public function test_matching_and_unknown_emails_get_exactly_the_same_answer(): void
     {
+        // Outside mode demo; mode demo deliberately shows the link on screen.
+        config(['edulink.mode_demo' => false]);
+
         Tutor::factory()->internal()->denganAkun()->create(['kontak' => 'sudah.aktif@contoh.com']);
         Tutor::factory()->eksternal()->draf()->create(['kontak' => 'eksternal@contoh.com']);
 
@@ -71,7 +74,7 @@ class AktivasiTutorTest extends TestCase
 
         $this->get($url)->assertOk()->assertSeeText('Halo, Lestari Putri');
 
-        $this->post($url, ['password' => 'rahasia123', 'password_confirmation' => 'rahasia123'])
+        $this->post($url, ['password' => 'rahasia123', 'password_confirmation' => 'rahasia123', 'setuju' => '1'])
             ->assertRedirect(route('tutor.pendaftaran.langkah', LangkahPendaftaran::Profil));
 
         $this->assertSame(1, Tutor::query()->count());
@@ -96,18 +99,18 @@ class AktivasiTutorTest extends TestCase
         $this->travel(61)->minutes();
 
         $this->get($url)->assertForbidden()->assertSeeText('Tautan tidak berlaku');
-        $this->post($url, ['password' => 'rahasia123', 'password_confirmation' => 'rahasia123'])->assertForbidden();
+        $this->post($url, ['password' => 'rahasia123', 'password_confirmation' => 'rahasia123', 'setuju' => '1'])->assertForbidden();
         $this->assertNull($this->tutor->refresh()->id_akun);
     }
 
     public function test_link_works_only_once(): void
     {
         $url = $this->mintaTautan();
-        $this->post($url, ['password' => 'rahasia123', 'password_confirmation' => 'rahasia123']);
+        $this->post($url, ['password' => 'rahasia123', 'password_confirmation' => 'rahasia123', 'setuju' => '1']);
         $this->post(route('logout'));
 
         $this->get($url)->assertStatus(410)->assertSeeText('Tautan sudah dipakai');
-        $this->post($url, ['password' => 'lainlagi123', 'password_confirmation' => 'lainlagi123'])->assertStatus(410);
+        $this->post($url, ['password' => 'lainlagi123', 'password_confirmation' => 'lainlagi123', 'setuju' => '1'])->assertStatus(410);
 
         $this->assertSame(1, AkunPengguna::query()->count());
     }
@@ -123,7 +126,7 @@ class AktivasiTutorTest extends TestCase
     public function test_internal_tutor_may_send_without_documents_but_not_without_a_schedule(): void
     {
         $url = $this->mintaTautan();
-        $this->post($url, ['password' => 'rahasia123', 'password_confirmation' => 'rahasia123']);
+        $this->post($url, ['password' => 'rahasia123', 'password_confirmation' => 'rahasia123', 'setuju' => '1']);
 
         $this->put(route('tutor.pendaftaran.profil'), [
             'pendidikan' => 'S1', 'institusi' => 'Universitas Jambi', 'jurusan' => 'Pendidikan Matematika',

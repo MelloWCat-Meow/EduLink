@@ -23,6 +23,11 @@ enum JenisNotifikasi: string
     case KeputusanVerifikasi = 'keputusan_verifikasi';
     case PendaftaranTutorBaru = 'pendaftaran_tutor_baru';
     case PengajuanPencairanBaru = 'pengajuan_pencairan_baru';
+    case KataSandiDiubah = 'kata_sandi_diubah';
+    case JadwalUlangDiajukan = 'jadwal_ulang_diajukan';
+    case JadwalUlangDijawab = 'jadwal_ulang_dijawab';
+    case PengembalianDana = 'pengembalian_dana';
+    case MapelDiubah = 'mapel_diubah';
 
     public function pakaiEmail(): bool
     {
@@ -36,6 +41,9 @@ enum JenisNotifikasi: string
             self::PesananKedaluwarsa,
             self::PencairanDibayar,
             self::KeputusanVerifikasi,
+            self::KataSandiDiubah,
+            self::JadwalUlangDiajukan,
+            self::PengembalianDana,
         ], true);
     }
 }

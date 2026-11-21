@@ -53,6 +53,7 @@ class PesananController extends Controller
             'sesi' => fn ($sesi) => $sesi->orderBy('waktu'),
             'pembayaran' => fn ($pembayaran) => $pembayaran->orderBy('created_at'),
             'keluhan' => fn ($keluhan) => $keluhan->latest(),
+            'pengembalianDana',
             'riwayat' => fn ($riwayat) => $riwayat->with('akun')->orderBy('dicatat_pada')->orderBy('id'),
         ]);
 

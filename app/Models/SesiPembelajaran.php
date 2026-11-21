@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -57,6 +58,14 @@ class SesiPembelajaran extends Model
     protected function milikTutor(Builder $query, string $idTutor): void
     {
         $query->whereHas('pesanan', fn (Builder $pesanan) => $pesanan->where('id_tutor', $idTutor));
+    }
+
+    /**
+     * @return HasMany<PermintaanJadwalUlang, $this>
+     */
+    public function permintaanJadwalUlang(): HasMany
+    {
+        return $this->hasMany(PermintaanJadwalUlang::class, 'id_sesi', 'id_sesi');
     }
 
     /**

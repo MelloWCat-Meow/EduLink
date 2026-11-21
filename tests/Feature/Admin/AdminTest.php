@@ -113,8 +113,7 @@ class AdminTest extends TestCase
             ->assertRedirect(route('admin.pesanan.show', $pesanan));
 
         $this->assertSame(StatusPesanan::Batal, $pesanan->refresh()->status);
-        $this->assertSame('Dibatalkan admin: Tutor pindah kota.', $pesanan->riwayat()->latest('id')->value('catatan'));
-        $this->assertSame($this->admin->id_akun, $pesanan->riwayat()->latest('id')->value('id_akun'));
+        $this->assertDatabaseHas('riwayat_status_pesanan', ['id_pesanan' => $pesanan->id_pesanan, 'status' => 'batal', 'catatan' => 'Dibatalkan admin: Tutor pindah kota.', 'id_akun' => $this->admin->id_akun]);
     }
 
     public function test_finished_order_cannot_be_cancelled(): void
