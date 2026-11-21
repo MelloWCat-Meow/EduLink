@@ -409,6 +409,25 @@
         border-color: var(--color-cap);
     }
 
+    /*
+     * Password field with the show/hide toggle (resources/js/kata-sandi.js):
+     * room on the right so typed text never runs under the eye icon, in both
+     * the password and the revealed text state, with or without an error.
+     */
+    .kolom-sandi > input {
+        padding-right: 3rem;
+    }
+
+    /* Only one eye icon: hide the browser's own reveal and clear buttons. */
+    .kolom-sandi > input::-ms-reveal,
+    .kolom-sandi > input::-ms-clear {
+        display: none;
+    }
+
+    .tombol-sandi:focus-visible {
+        outline-offset: 0;
+    }
+
     /* Hand-drawn check box for "ingat saya". */
     .centang {
         appearance: none;

@@ -21,15 +21,30 @@
         <p id="{{ $hintId }}" class="mt-0.5 text-[0.9375rem] text-pensil-muda">{{ $hint }}</p>
     @endif
 
-    <input
-        id="{{ $id }}"
-        name="{{ $name }}"
-        type="{{ $type }}"
-        @if ($type !== 'password') value="{{ old($name, $value) }}" @endif
-        @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif
-        @if ($hasError) aria-invalid="true" @endif
-        {{ $attributes->merge(['class' => 'isian-teks mt-1']) }}
-    >
+    @if ($type === 'password')
+        {{-- Password fields get a show/hide toggle inside the field, on the right. --}}
+        <div class="kolom-sandi relative mt-1">
+            <input
+                id="{{ $id }}"
+                name="{{ $name }}"
+                type="password"
+                @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif
+                @if ($hasError) aria-invalid="true" @endif
+                {{ $attributes->merge(['class' => 'isian-teks']) }}
+            >
+            <x-tombol-sandi :untuk="$id" />
+        </div>
+    @else
+        <input
+            id="{{ $id }}"
+            name="{{ $name }}"
+            type="{{ $type }}"
+            value="{{ old($name, $value) }}"
+            @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif
+            @if ($hasError) aria-invalid="true" @endif
+            {{ $attributes->merge(['class' => 'isian-teks mt-1']) }}
+        >
+    @endif
 
     @error($name)
         <p id="{{ $errorId }}" class="koreksi">
