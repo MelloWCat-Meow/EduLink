@@ -28,7 +28,7 @@ class DaftarTest extends TestCase
             'kontak' => 'Rina@Contoh.com',
             'no_hp' => '0812 3456 7890',
             'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
+            'password_confirmation' => 'rahasia123', 'setuju' => '1',
         ]);
 
         $akun = AkunPengguna::query()->sole();
@@ -43,7 +43,7 @@ class DaftarTest extends TestCase
 
     public function test_sign_up_requires_an_indonesian_phone_number(): void
     {
-        $isian = ['nama' => 'Rina Marlina', 'kontak' => 'rina@contoh.com', 'password' => 'rahasia123', 'password_confirmation' => 'rahasia123'];
+        $isian = ['nama' => 'Rina Marlina', 'kontak' => 'rina@contoh.com', 'password' => 'rahasia123', 'password_confirmation' => 'rahasia123', 'setuju' => '1'];
 
         $this->post(route('register.store'), $isian)->assertSessionHasErrors(['no_hp' => 'Nomor HP belum diisi.']);
         $this->post(route('register.store'), $isian + ['no_hp' => '12345'])->assertSessionHasErrors(['no_hp' => 'Tulis nomor HP Indonesia, misalnya 0812 3456 7890.']);
@@ -63,7 +63,7 @@ class DaftarTest extends TestCase
             'kontak' => 'rina@contoh.com',
             'no_hp' => '0812 3456 7890',
             'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
+            'password_confirmation' => 'rahasia123', 'setuju' => '1',
         ]);
 
         $this->assertDatabaseHas('akun_pengguna', ['kontak' => 'rina@contoh.com', 'id_akun' => 'AK0003']);
@@ -76,7 +76,7 @@ class DaftarTest extends TestCase
             'kontak' => 'coba@contoh.com',
             'no_hp' => '0812 3456 7890',
             'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
+            'password_confirmation' => 'rahasia123', 'setuju' => '1',
             'peran' => 'admin',
         ]);
 
@@ -122,7 +122,7 @@ class DaftarTest extends TestCase
             'kontak' => 'RINA@contoh.com',
             'no_hp' => '0812 3456 7890',
             'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
+            'password_confirmation' => 'rahasia123', 'setuju' => '1',
         ]);
 
         $response->assertSessionHasErrors(['kontak' => 'Email ini sudah terdaftar. Silakan masuk dengan email tersebut.']);

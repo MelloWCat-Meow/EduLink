@@ -21,12 +21,15 @@
         ? [
             ['admin.beranda', 'Ringkasan', 'admin.beranda'],
             ['admin.verifikasi.index', 'Verifikasi tutor', 'admin.verifikasi.*'],
+            ['admin.tutor.index', 'Kelola tutor', 'admin.tutor.*'],
             ['admin.pesanan.index', 'Pesanan', 'admin.pesanan.*'],
             ['admin.keluhan.index', 'Keluhan', 'admin.keluhan.*'],
             ['admin.ulasan.index', 'Ulasan', 'admin.ulasan.*'],
             ['admin.komisi.edit', 'Komisi', 'admin.komisi.*'],
             ['admin.pencairan.index', 'Pencairan dana', 'admin.pencairan.*'],
+            ['admin.pengembalian.index', 'Pengembalian dana', 'admin.pengembalian.*'],
             ['admin.pengguna.index', 'Data pengguna', 'admin.pengguna.*'],
+            ['admin.akun.edit', 'Akun saya', 'admin.akun.*'],
         ]
         : [
             ['beranda', 'Beranda', 'beranda'],
@@ -111,6 +114,12 @@
             <div class="mx-auto max-w-[72rem]">
                 <x-dasbor.flash />
                 {{ $slot }}
+
+                <footer class="mt-16 flex flex-wrap gap-x-6 gap-y-1 border-t-2 border-dashed border-pensil/20 pt-4 text-[0.875rem] text-pensil-muda">
+                    <span>&copy; {{ date('Y') }} PT EduLink Teknologi Indonesia</span>
+                    <a href="{{ route('syarat') }}" class="inline-flex min-h-11 items-center underline underline-offset-4">Syarat dan ketentuan</a>
+                    <a href="{{ route('privacy') }}" class="inline-flex min-h-11 items-center underline underline-offset-4">Kebijakan privasi</a>
+                </footer>
             </div>
         </main>
     </div>

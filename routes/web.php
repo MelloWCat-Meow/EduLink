@@ -1,17 +1,23 @@
 <?php
 
+use App\Http\Controllers\Admin\AkunAdminController;
 use App\Http\Controllers\Admin\KeluhanController as AdminKeluhanController;
 use App\Http\Controllers\Admin\KomisiController;
+use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\PencairanController;
+use App\Http\Controllers\Admin\PengembalianController;
 use App\Http\Controllers\Admin\PenggunaController;
 use App\Http\Controllers\Admin\PesananController as AdminPesananController;
 use App\Http\Controllers\Admin\RingkasanController;
+use App\Http\Controllers\Admin\TutorAdminController;
 use App\Http\Controllers\Admin\UlasanController as AdminUlasanController;
 use App\Http\Controllers\Admin\VerifikasiController;
 use App\Http\Controllers\Auth\DaftarController;
+use App\Http\Controllers\Auth\KataSandiController;
 use App\Http\Controllers\Auth\SesiController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\BerkasDokumenController;
+use App\Http\Controllers\JadwalUlangController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\Ortu\AkunController;
@@ -52,6 +58,12 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/daftar', [DaftarController::class, 'create'])->name('register');
     Route::post('/daftar', [DaftarController::class, 'store'])->middleware('throttle:pendaftaran')->name('register.store');
 
+    // "Lupa kata sandi" for every role.
+    Route::get('/lupa-kata-sandi', [KataSandiController::class, 'lupa'])->name('password.request');
+    Route::post('/lupa-kata-sandi', [KataSandiController::class, 'kirim'])->middleware('throttle:lupa-sandi')->name('password.email');
+    Route::get('/lupa-kata-sandi/{token}', [KataSandiController::class, 'buat'])->name('password.reset');
+    Route::post('/reset-kata-sandi', [KataSandiController::class, 'simpan'])->middleware('throttle:lupa-sandi')->name('password.update');
+
     // External tutor sign-up, step 1 (the account). Later steps need the account.
     Route::post('/daftar-tutor', [DaftarTutorController::class, 'store'])->middleware('throttle:pendaftaran')->name('tutor.register.store');
 
@@ -75,6 +87,16 @@ Route::middleware('lepas-penahanan')->group(function (): void {
 
 Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
     Route::post('/keluar', [SesiController::class, 'destroy'])->name('logout');
+
+    // Change the password while signed in (every role; the form sits on each role's account page).
+    Route::put('/kata-sandi', [KataSandiController::class, 'ganti'])->middleware('throttle:6,1')->name('kata-sandi.ganti');
+
+    // Rescheduling a session, by the parent or the tutor of the order.
+    Route::middleware('peran:ortu,tutor')->group(function (): void {
+        Route::post('/sesi/{sesi}/jadwal-ulang', [JadwalUlangController::class, 'ajukan'])->name('jadwal-ulang.ajukan');
+        Route::post('/jadwal-ulang/{permintaan}/setujui', [JadwalUlangController::class, 'setujui'])->name('jadwal-ulang.setujui');
+        Route::post('/jadwal-ulang/{permintaan}/tolak', [JadwalUlangController::class, 'tolak'])->name('jadwal-ulang.tolak');
+    });
 
     // Notifications for every role.
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
@@ -109,9 +131,8 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
         Route::get('/akun', [AkunController::class, 'edit'])->name('akun.edit');
         Route::put('/akun', [AkunController::class, 'update'])->name('akun.update');
 
-        if (! app()->isProduction()) {
-            Route::get('/simulasi/pembayaran/{pembayaran}', SimulasiPembayaranController::class)->name('simulasi.pembayaran')->can('view', 'pembayaran');
-        }
+        // Simulated payment gateway; answers 404 unless config edulink.mode_demo is on.
+        Route::get('/simulasi/pembayaran/{pembayaran}', SimulasiPembayaranController::class)->middleware('mode-demo')->name('simulasi.pembayaran')->can('view', 'pembayaran');
     });
 
     /*
@@ -119,6 +140,8 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
     */
     Route::middleware('peran:admin')->prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/', RingkasanController::class)->name('beranda');
+        Route::get('/laporan/csv', [LaporanController::class, 'csv'])->name('laporan.csv');
+        Route::get('/laporan/cetak', [LaporanController::class, 'cetak'])->name('laporan.cetak');
 
         Route::get('/verifikasi', [VerifikasiController::class, 'index'])->name('verifikasi.index');
         Route::get('/verifikasi/{tutor}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
@@ -145,6 +168,19 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
         Route::post('/pencairan/{pencairan}/bayar', [PencairanController::class, 'bayar'])->name('pencairan.bayar');
 
         Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
+        Route::get('/pengguna/{akun}', [PenggunaController::class, 'show'])->name('pengguna.show');
+        Route::post('/pengguna/{akun}/nonaktifkan', [PenggunaController::class, 'nonaktifkan'])->name('pengguna.nonaktifkan');
+        Route::post('/pengguna/{akun}/aktifkan', [PenggunaController::class, 'aktifkan'])->name('pengguna.aktifkan');
+
+        Route::get('/tutor', [TutorAdminController::class, 'index'])->name('tutor.index');
+        Route::get('/tutor/{tutor}', [TutorAdminController::class, 'show'])->name('tutor.show');
+        Route::put('/tutor/{tutor}/mapel', [TutorAdminController::class, 'mapel'])->name('tutor.mapel');
+
+        Route::get('/pengembalian', [PengembalianController::class, 'index'])->name('pengembalian.index');
+        Route::post('/pengembalian/{pengembalian}/selesai', [PengembalianController::class, 'selesai'])->name('pengembalian.selesai');
+
+        Route::get('/akun', [AkunAdminController::class, 'edit'])->name('akun.edit');
+        Route::put('/akun', [AkunAdminController::class, 'update'])->name('akun.update');
     });
 
     /*
@@ -201,13 +237,13 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
 });
 
 /*
-| Placeholder pages until the real features are built.
+| Legal documents: the Terms and the Privacy Policy every account agrees to.
 */
-Route::view('/kebijakan-privasi', 'placeholder', ['title' => 'Kebijakan privasi'])->name('privacy');
+Route::view('/kebijakan-privasi', 'dokumen.kebijakan-privasi')->name('privacy');
+Route::view('/syarat-ketentuan', 'dokumen.syarat-ketentuan')->name('syarat');
 
 /*
-| Stand-ins for outside services that do not exist yet. Never registered in production.
+| Stand-ins for outside services that do not exist yet. Live only in mode demo
+| (config edulink.mode_demo), whatever APP_ENV is; the HMAC signature still applies.
 */
-if (! app()->isProduction()) {
-    Route::post('/webhooks/payment', WebhookPembayaranController::class)->name('webhooks.payment');
-}
+Route::post('/webhooks/payment', WebhookPembayaranController::class)->middleware('mode-demo')->name('webhooks.payment');

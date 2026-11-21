@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AlasanRequest;
 use App\Models\Pesanan;
 use App\Services\AlurPesanan;
+use App\Services\JadwalUlang;
 use App\Services\KontakWhatsApp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,12 +37,15 @@ class PesananTutorController extends Controller
         return view('tutor.dasbor.pesanan.index', ['daftarPesanan' => $daftarPesanan, 'statusDipilih' => $status]);
     }
 
-    public function show(Request $request, Pesanan $pesanan, KontakWhatsApp $kontakWhatsApp): View
+    public function show(Request $request, Pesanan $pesanan, KontakWhatsApp $kontakWhatsApp, JadwalUlang $jadwalUlang): View
     {
+        $jadwalUlang->kedaluwarsakan();
+
         $pesanan->load([
             'siswa.wali', 'mapel', 'jadwal', 'komisi', 'ulasan',
-            'sesi' => fn ($sesi) => $sesi->orderBy('waktu'),
+            'sesi' => fn ($sesi) => $sesi->orderBy('waktu')->with('permintaanJadwalUlang'),
             'keluhan' => fn ($keluhan) => $keluhan->where('id_akun', $request->user()->id_akun)->latest(),
+            'pengembalianDana',
             'riwayat' => fn ($riwayat) => $riwayat->with('akun')->orderBy('dicatat_pada')->orderBy('id'),
         ]);
 

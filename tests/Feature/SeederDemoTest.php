@@ -97,6 +97,10 @@ class SeederDemoTest extends TestCase
         $dewi = Tutor::query()->where('kontak', 'dewi.anggraini@edulink.test')->sole();
         $this->assertTrue(SesiPembelajaran::query()->whereIn('id_pesanan', $dewi->pesanan()->select('id_pesanan'))->whereBetween('waktu', [now()->addDay()->startOfDay(), now()->addDay()->endOfDay()])->exists());
 
+        // The README demo books Andi's Thursday slot, so it must start free.
+        $andi = Tutor::query()->where('kontak', 'andi.pratama@edulink.test')->sole();
+        $this->assertSame('tersedia', $andi->jadwal()->where('hari', 'kamis')->where('jam', '19:00:00')->sole()->status->value);
+
         $this->assertSame(0, AkunPengguna::query()->where('peran', Peran::Ortu)->whereNull('no_hp')->count());
         $this->assertSame(0, Tutor::query()->whereNull('no_hp')->count());
     }

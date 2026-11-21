@@ -42,6 +42,7 @@ class DaftarRequest extends FormRequest
             'password' => ['required', 'string', Password::min(8)],
             // Checked on its own field so the message sits under "Ulangi kata sandi".
             'password_confirmation' => ['required', 'string', 'same:password'],
+            'setuju' => ['accepted'],
         ];
     }
 
@@ -63,6 +64,7 @@ class DaftarRequest extends FormRequest
             'password.min' => 'Kata sandi minimal 8 karakter.',
             'password_confirmation.required' => 'Ulangi kata sandi di sini.',
             'password_confirmation.same' => 'Ulangan kata sandi belum sama dengan kata sandi di atas.',
+            'setuju.accepted' => 'Centang persetujuan Syarat dan Ketentuan serta Kebijakan Privasi untuk melanjutkan.',
         ];
     }
 }

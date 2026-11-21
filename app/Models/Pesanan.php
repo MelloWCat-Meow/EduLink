@@ -147,6 +147,14 @@ class Pesanan extends Model
     }
 
     /**
+     * @return HasOne<PengembalianDana, $this>
+     */
+    public function pengembalianDana(): HasOne
+    {
+        return $this->hasOne(PengembalianDana::class, 'id_pesanan', 'id_pesanan');
+    }
+
+    /**
      * @return HasOne<RatingUlasan, $this>
      */
     public function ulasan(): HasOne

@@ -66,7 +66,7 @@ class TutorSeeder extends Seeder
                 'pendidikan' => ['pendidikan' => 'S1', 'institusi' => 'UIN Sulthan Thaha Saifuddin Jambi', 'jurusan' => 'Sastra Inggris'],
                 'kompetensi' => 'S1 Sastra Inggris, sertifikat TOEFL ITP 610. Latihan percakapan dan tata bahasa untuk ujian sekolah.',
                 'pengalaman' => 'Lima tahun mengajar daring untuk siswa SMP dan SMA di seluruh Kota Jambi.',
-                'jadwal' => [['selasa', '16:00'], ['jumat', '19:00'], ['sabtu', '10:00']],
+                'jadwal' => [['selasa', '16:00'], ['kamis', '19:00'], ['jumat', '19:00'], ['sabtu', '10:00']],
             ],
             [
                 'nama' => 'Yusuf Hidayat', 'status' => StatusTutor::Internal, 'kontak' => 'yusuf.hidayat@edulink.test', 'no_hp' => '081266100205',
@@ -296,6 +296,8 @@ class TutorSeeder extends Seeder
                 'no_hp' => $data['no_hp'],
                 'peran' => Peran::Tutor,
                 'kredensial' => self::KATA_SANDI,
+                'persetujuan_pada' => now(),
+                'versi_kebijakan' => config('edulink.versi_kebijakan'),
             ]);
         }
 

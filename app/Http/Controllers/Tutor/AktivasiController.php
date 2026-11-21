@@ -35,8 +35,8 @@ class AktivasiController extends Controller
 
         $redirect = redirect()->route('tutor.aktivasi')->with('status', self::PESAN_TERKIRIM);
 
-        // Local demo only: there is no real inbox, so the link is shown on screen.
-        if ($url !== null && app()->isLocal()) {
+        // Mode demo only: there is no real inbox, so the link is shown on screen.
+        if ($url !== null && config('edulink.mode_demo')) {
             $redirect->with('tautan_demo', $url);
         }
 
