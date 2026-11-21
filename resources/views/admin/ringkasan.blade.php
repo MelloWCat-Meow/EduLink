@@ -12,13 +12,19 @@
                 </label>
                 <button type="submit" class="tombol-garis">Tampilkan</button>
             </form>
+            <a href="{{ route('admin.laporan.csv', ['periode' => $r['periode']]) }}" class="tombol-garis" download>
+                <svg aria-hidden="true" class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m-4-4 4 4 4-4M4 16h12"/></svg>
+                Unduh CSV
+            </a>
+            <a href="{{ route('admin.laporan.cetak', ['periode' => $r['periode']]) }}" target="_blank" rel="noopener" class="tombol-garis">Cetak<span class="sr-only"> (membuka tab baru)</span></a>
         </x-slot:actions>
     </x-dasbor.judul>
 
-    <dl class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <dl class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         @foreach ([
             ['Transaksi berhasil', Format::rupiah($r['total_transaksi']), $r['jumlah_transaksi'].' pembayaran', null],
             ['Pendapatan komisi', Format::rupiah($r['pendapatan_komisi']), 'dari pembayaran bulan ini', route('admin.komisi.edit')],
+            ['Pengembalian dana', Format::rupiah($r['total_pengembalian']), $r['jumlah_pengembalian'].' pesanan dibatalkan bulan ini', route('admin.pengembalian.index')],
             ['Tutor menunggu verifikasi', $r['tutor_menunggu_verifikasi'], 'antrean saat ini', route('admin.verifikasi.index')],
             ['Keluhan terbuka', $r['keluhan_terbuka'], 'baru atau diproses', route('admin.keluhan.index')],
         ] as [$label, $nilai, $keterangan, $tautan])

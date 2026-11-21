@@ -17,13 +17,20 @@
     </x-slot:aside>
 
     <x-auth.sheet heading="Lembar masuk" note="diisi oleh: pemilik akun">
+        @if (session('status'))
+            <p role="status" class="mb-6 border-l-4 border-tinta bg-langit/70 px-4 py-3">{{ session('status') }}</p>
+        @endif
+
         <x-auth.error-summary />
 
         <form method="POST" action="{{ route('login.store') }}" novalidate class="space-y-7">
             @csrf
 
             <x-auth.field name="kontak" label="Email" type="email" autocomplete="username" inputmode="email" required autofocus />
-            <x-auth.field name="password" label="Kata sandi" type="password" autocomplete="current-password" required />
+            <div>
+                <x-auth.field name="password" label="Kata sandi" type="password" autocomplete="current-password" required />
+                <a href="{{ route('password.request') }}" class="mt-2 inline-flex min-h-11 items-center font-bold underline decoration-2 underline-offset-4">Lupa kata sandi?</a>
+            </div>
 
             <label for="isian-ingat" class="flex min-h-11 w-fit items-center gap-3 font-bold">
                 <input id="isian-ingat" type="checkbox" name="ingat" value="1" class="centang" @checked(old('ingat'))>

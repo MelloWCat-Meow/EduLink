@@ -56,6 +56,7 @@
                                         <x-dasbor.label>Belum dicatat</x-dasbor.label>
                                     @endif
                                 </div>
+                                <x-dasbor.jadwal-ulang :sesi="$sesi" :pesanan="$pesanan" class="basis-full" />
                             </li>
                         @endforeach
                     </ol>
@@ -151,6 +152,8 @@
                     </form>
                 </x-dasbor.panel>
             @endif
+
+            <x-dasbor.pengembalian :pengembalian="$pesanan->pengembalianDana" :pesanan="$pesanan" />
 
             <x-dasbor.panel heading="Riwayat status">
                 <ol class="relative ml-2 border-l-2 border-dashed border-pensil/30">

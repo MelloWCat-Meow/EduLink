@@ -70,6 +70,7 @@ class AktivasiTutor
 
             $akun = new AkunPengguna(['nama' => $tutor->nama, 'kontak' => $kontak, 'kredensial' => $password]);
             $akun->peran = Peran::Tutor;
+            $akun->catatPersetujuan();
             $akun->save();
 
             $tutor->id_akun = $akun->id_akun;

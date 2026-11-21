@@ -4,11 +4,14 @@ namespace App\Services;
 
 use App\Enums\JenisNotifikasi;
 use App\Enums\Peran;
+use App\Enums\StatusJadwalUlang;
 use App\Enums\StatusPencairan;
 use App\Enums\StatusVerifikasiTutor;
 use App\Models\AkunPengguna;
 use App\Models\Keluhan;
 use App\Models\PencairanDanaTutor;
+use App\Models\PengembalianDana;
+use App\Models\PermintaanJadwalUlang;
 use App\Models\Pesanan;
 use App\Models\RatingUlasan;
 use App\Models\SesiPembelajaran;
@@ -236,6 +239,98 @@ class Pemberitahu
             'Pengajuan pencairan baru',
             "{$nama} mengajukan pencairan ".Format::rupiah($pencairan->nominal)." ({$pencairan->id_pencairan}).",
             route('admin.pencairan.index'),
+        ));
+    }
+
+    public function jadwalUlangDiajukan(PermintaanJadwalUlang $permintaan, Pesanan $pesanan): void
+    {
+        $pesanan = $this->muat($pesanan);
+        $dariTutor = AkunPengguna::query()->whereKey($permintaan->id_akun)->value('peran') === Peran::Tutor;
+        $isi = 'Sesi '.Format::waktu($permintaan->waktu_lama).' diminta pindah ke '.Format::waktu($permintaan->waktu_baru, true).". Alasan: {$permintaan->alasan} Setujui atau tolak sebelum waktu sesi semula.";
+
+        $dariTutor
+            ? $this->kirim($this->wali($pesanan), new Pemberitahuan(JenisNotifikasi::JadwalUlangDiajukan, "{$pesanan->tutor->nama} meminta jadwal ulang", $isi, route('pesanan.show', $pesanan)))
+            : $this->kirim($this->akunTutor($pesanan), new Pemberitahuan(JenisNotifikasi::JadwalUlangDiajukan, "Wali {$pesanan->siswa->nama} meminta jadwal ulang", $isi, route('tutor.pesanan.show', $pesanan)));
+    }
+
+    public function jadwalUlangDijawab(PermintaanJadwalUlang $permintaan, Pesanan $pesanan): void
+    {
+        $pengaju = AkunPengguna::query()->find($permintaan->id_akun);
+        $disetujui = $permintaan->status === StatusJadwalUlang::Disetujui;
+
+        $this->kirim($pengaju, new Pemberitahuan(
+            JenisNotifikasi::JadwalUlangDijawab,
+            $disetujui ? 'Jadwal ulang disetujui' : 'Jadwal ulang ditolak',
+            $disetujui
+                ? 'Sesi pindah ke '.Format::waktu($permintaan->waktu_baru, true).'.'
+                : 'Sesi tetap '.Format::waktu($permintaan->waktu_lama, true).'. Alasan: '.$permintaan->alasan_penolakan,
+            $pengaju?->hasPeran(Peran::Tutor) ? route('tutor.pesanan.show', $pesanan) : route('pesanan.show', $pesanan),
+        ));
+    }
+
+    public function pengembalianSelesai(PengembalianDana $pengembalian): void
+    {
+        $pesanan = $this->muat($pengembalian->pesanan()->firstOrFail());
+
+        $this->kirim($this->wali($pesanan), new Pemberitahuan(
+            JenisNotifikasi::PengembalianDana,
+            'Dana pesanan '.$pesanan->id_pesanan.' sudah dikembalikan',
+            Format::rupiah($pengembalian->nominal).' sudah ditransfer kembali. Catatan admin: '.$pengembalian->catatan,
+            route('pesanan.show', $pesanan),
+        ));
+    }
+
+    /**
+     * Tells the other side of the order; the switched-off side cannot sign in anyway.
+     *
+     * @param  'tutor'|'ortu'  $pihak  whose account was switched off
+     */
+    public function pesananDibatalkanKarenaAkun(Pesanan $pesanan, string $pihak): void
+    {
+        $pesanan = $this->muat($pesanan);
+
+        $pihak === 'tutor'
+            ? $this->kirim($this->wali($pesanan), new Pemberitahuan(
+                JenisNotifikasi::PesananDibatalkan,
+                'Pesanan dibatalkan otomatis',
+                "Pesanan {$pesanan->id_pesanan} dengan {$pesanan->tutor->nama} dibatalkan karena akun tutor dinonaktifkan EduLink. Belum ada pembayaran yang diproses. Silakan cari tutor lain.",
+                route('pesanan.show', $pesanan),
+            ))
+            : $this->kirim($this->akunTutor($pesanan), new Pemberitahuan(
+                JenisNotifikasi::PesananDibatalkan,
+                'Pesanan dibatalkan otomatis',
+                "Pesanan {$pesanan->id_pesanan} ({$pesanan->siswa->nama}) dibatalkan karena akun orang tua dinonaktifkan EduLink. Slot {$pesanan->jadwal->label()} kembali tersedia.",
+                route('tutor.pesanan.show', $pesanan),
+            ));
+    }
+
+    /**
+     * @param  list<string>  $ditambah
+     * @param  list<string>  $dihapus
+     */
+    public function mapelDiubah(Tutor $tutor, array $ditambah, array $dihapus, string $alasan): void
+    {
+        $perubahan = trim(($ditambah ? 'Ditambah: '.implode(', ', $ditambah).'. ' : '').($dihapus ? 'Dihapus: '.implode(', ', $dihapus).'. ' : ''));
+
+        $this->kirim($this->akunTutorDari($tutor->id_tutor), new Pemberitahuan(
+            JenisNotifikasi::MapelDiubah,
+            'Mata pelajaran Anda diubah admin',
+            "{$perubahan} Alasan: {$alasan}",
+            route('tutor.profil.edit'),
+        ));
+    }
+
+    /**
+     * Security notice; also by email so the owner hears of it even if someone
+     * else changed it.
+     */
+    public function kataSandiDiubah(AkunPengguna $akun): void
+    {
+        $this->kirim($akun, new Pemberitahuan(
+            JenisNotifikasi::KataSandiDiubah,
+            'Kata sandi Anda baru saja diubah',
+            'Kata sandi akun EduLink Anda diubah pada '.Format::waktu(now()).'. Perangkat lain sudah dikeluarkan. Kalau bukan Anda yang mengubahnya, segera atur ulang kata sandi dan hubungi admin EduLink.',
+            route('login'),
         ));
     }
 

@@ -35,6 +35,7 @@ class DaftarController extends Controller
                 'kredensial' => $request->validated('password'),
             ]);
             $akun->peran = Peran::Ortu;
+            $akun->catatPersetujuan();
             $akun->save();
 
             return $akun;

@@ -71,13 +71,15 @@ class Tutor extends Model
 
     /**
      * Tutors a parent may find and book: the application was approved
-     * (internal and external alike) and the profile has a rate and a district,
-     * since a parent cannot book without either.
+     * (internal and external alike), the account is not switched off by an
+     * admin, and the profile has a rate and a district, since a parent cannot
+     * book without either.
      */
     #[Scope]
     protected function tampil(Builder $query): void
     {
         $query->where('status_verifikasi', StatusVerifikasiTutor::Terverifikasi)
+            ->whereDoesntHave('akun', fn (Builder $akun) => $akun->where('aktif', false))
             ->whereHas('profil', fn (Builder $profil) => $profil->whereNotNull('tarif')->whereNotNull('lokasi')->where('lokasi', '!=', ''));
     }
 

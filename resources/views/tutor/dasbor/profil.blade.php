@@ -67,7 +67,9 @@
                     <li><span class="font-bold">{{ $jenjang }}:</span> {{ $daftar->pluck('nama')->join(', ') }}</li>
                 @endforeach
             </ul>
-            <p class="mt-4 border-l-4 border-tinta bg-langit/60 px-3 py-2 text-[0.9375rem]">Mata pelajaran dan jenjang sudah diperiksa tim akademik. Hubungi admin untuk mengubah mata pelajaran.</p>
+            <p class="mt-4 border-l-4 border-tinta bg-langit/60 px-3 py-2 text-[0.9375rem]">Mata pelajaran dan jenjang sudah diperiksa tim akademik, jadi hanya admin yang bisa mengubahnya. Kirim permintaan ke <a href="mailto:{{ config('edulink.email_admin') }}?subject={{ rawurlencode('Ubah mata pelajaran '.$tutor->id_tutor) }}" class="tautan">{{ config('edulink.email_admin') }}</a>. Admin mengubahnya dari halaman Kelola tutor dengan alasan yang tercatat, lalu Anda menerima notifikasi.</p>
         </x-dasbor.panel>
+
+        <x-dasbor.form-kata-sandi class="lg:col-start-2" />
     </div>
 </x-dasbor.layout>

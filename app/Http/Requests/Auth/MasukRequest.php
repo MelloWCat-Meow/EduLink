@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Enums\Peran;
+use App\Http\Middleware\PastikanAkunAktif;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -63,6 +64,13 @@ class MasukRequest extends FormRequest
             throw ValidationException::withMessages([
                 'kontak' => 'Email atau kata sandi belum cocok. Periksa lagi, lalu coba masuk.',
             ]);
+        }
+
+        if (! Auth::user()->aktif) {
+            Auth::logout();
+            RateLimiter::clear($this->throttleKey());
+
+            throw ValidationException::withMessages(['kontak' => PastikanAkunAktif::PESAN]);
         }
 
         if (! in_array(Auth::user()->peran, [Peran::Ortu, Peran::Tutor, Peran::Admin], true)) {

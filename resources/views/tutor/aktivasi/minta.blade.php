@@ -22,7 +22,7 @@
 
         @if (session('tautan_demo'))
             <div class="mb-6 border-2 border-dashed border-pensil/40 bg-sticky px-4 py-3">
-                <p class="text-[0.8125rem] font-bold tracking-wide uppercase">Mode demo (hanya di lokal)</p>
+                <p class="text-[0.8125rem] font-bold tracking-wide uppercase">Mode demo</p>
                 <p class="mt-1 text-[0.9375rem]">Email terkirim ke log, jadi tautannya ditampilkan di sini:</p>
                 <a href="{{ session('tautan_demo') }}" class="tautan mt-1 block break-all">{{ session('tautan_demo') }}</a>
             </div>

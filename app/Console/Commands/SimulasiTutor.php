@@ -13,12 +13,12 @@ use Illuminate\Console\Command;
  * Stands in for the tutor app, which does not exist yet. Local only.
  */
 #[Signature('edulink:simulasi-tutor {id_pesanan : Nomor pesanan, mis. ORD-2026-000001} {aksi : terima atau tolak} {--alasan= : Alasan menolak}')]
-#[Description('Simulasi tutor menerima atau menolak pesanan (khusus lokal)')]
+#[Description('Simulasi tutor menerima atau menolak pesanan (khusus mode demo)')]
 class SimulasiTutor extends Command
 {
     public function isEnabled(): bool
     {
-        return ! app()->isProduction();
+        return (bool) config('edulink.mode_demo');
     }
 
     public function handle(AlurPesanan $alurPesanan): int
