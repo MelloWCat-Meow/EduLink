@@ -67,7 +67,6 @@ Selama mode demo aktif:
 - Tombol **Bayar** membuka halaman gateway tiruan dengan pilihan Berhasil atau Gagal. Hasilnya dikirim ke `POST /webhooks/payment` dengan tanda tangan HMAC.
 - Tautan aktivasi tutor internal dan tautan reset kata sandi juga ditampilkan di layar dengan label "Mode demo", karena tidak ada kotak masuk sungguhan.
 - Perintah `edulink:simulasi-tutor` dan `edulink:simulasi-sesi` tersedia untuk demo cepat.
-- Pita "Mode demo: pembayaran disimulasikan" tampil di atas setiap halaman.
 
 ## Akun demo
 

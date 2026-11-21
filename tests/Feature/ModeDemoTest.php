@@ -31,7 +31,6 @@ class ModeDemoTest extends TestCase
         $this->actingAs($ortu)->post(route('pesanan.bayar', $pesanan), ['metode' => 'qris'])->assertRedirect();
         $pembayaran = $pesanan->pembayaran()->sole();
         $this->actingAs($ortu)->get(route('simulasi.pembayaran', $pembayaran))->assertOk();
-        $this->get(route('landing'))->assertSeeText('pembayaran disimulasikan');
 
         $this->artisan('list')->expectsOutputToContain('edulink:simulasi-tutor');
     }
@@ -49,7 +48,6 @@ class ModeDemoTest extends TestCase
         $this->assertSame(0, $pesanan->pembayaran()->count());
 
         $this->postJson(route('webhooks.payment'), ['payment_id' => 'PAY0001'])->assertNotFound();
-        $this->get(route('landing'))->assertDontSeeText('pembayaran disimulasikan');
         $this->assertFalse((new SimulasiTutor)->isEnabled());
         $this->assertFalse((new SimulasiSesi)->isEnabled());
     }
