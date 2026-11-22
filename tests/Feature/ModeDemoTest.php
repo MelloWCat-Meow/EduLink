@@ -12,6 +12,7 @@ use App\Support\TandaTanganWebhook;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\MembuatPesanan;
 use Tests\TestCase;
 
@@ -78,5 +79,73 @@ class ModeDemoTest extends TestCase
         $this->post(route('tutor.aktivasi.store'), ['kontak' => 'lestari@contoh.com'])->assertSessionHas('tautan_demo');
 
         $this->assertInstanceOf(AkunPengguna::class, new AkunPengguna);
+    }
+
+    /**
+     * Reads config/edulink.php the way Laravel does at boot, with the given
+     * EDULINK_MODE_DEMO and APP_ENV, then puts the process environment back.
+     */
+    private function modeDemoDari(?string $nilai, string $appEnv): bool
+    {
+        $simpan = [];
+
+        foreach (['EDULINK_MODE_DEMO' => $nilai, 'APP_ENV' => $appEnv] as $kunci => $isi) {
+            $simpan[$kunci] = [$_SERVER[$kunci] ?? null, $_ENV[$kunci] ?? null, getenv($kunci)];
+
+            if ($isi === null) {
+                unset($_SERVER[$kunci], $_ENV[$kunci]);
+                putenv($kunci);
+            } else {
+                $_SERVER[$kunci] = $_ENV[$kunci] = $isi;
+                putenv($kunci.'='.$isi);
+            }
+        }
+
+        try {
+            return (require config_path('edulink.php'))['mode_demo'];
+        } finally {
+            foreach ($simpan as $kunci => [$server, $env, $proses]) {
+                unset($_SERVER[$kunci], $_ENV[$kunci]);
+
+                if ($server !== null) {
+                    $_SERVER[$kunci] = $server;
+                }
+
+                if ($env !== null) {
+                    $_ENV[$kunci] = $env;
+                }
+
+                putenv($proses === false ? $kunci : $kunci.'='.$proses);
+            }
+        }
+    }
+
+    /**
+     * @return array<string, array{0: ?string, 1: string, 2: bool}>
+     */
+    public static function nilaiModeDemo(): array
+    {
+        return [
+            'kosong di local' => ['', 'local', true],
+            'kosong di testing' => ['', 'testing', true],
+            'kosong di production' => ['', 'production', false],
+            'tidak diisi di local' => [null, 'local', true],
+            'tidak diisi di production' => [null, 'production', false],
+            'true di production' => ['true', 'production', true],
+            'false di local' => ['false', 'local', false],
+            '1 di production' => ['1', 'production', true],
+            '0 di local' => ['0', 'local', false],
+            'on di production' => ['on', 'production', true],
+            'off di local' => ['off', 'local', false],
+            'ON huruf besar' => ['ON', 'production', true],
+            'salah ketik jatuh ke default local' => ['ture', 'local', true],
+            'salah ketik jatuh ke default production' => ['ture', 'production', false],
+        ];
+    }
+
+    #[DataProvider('nilaiModeDemo')]
+    public function test_demo_mode_reads_the_env_value_or_falls_back_to_the_default(?string $nilai, string $appEnv, bool $harapan): void
+    {
+        $this->assertSame($harapan, $this->modeDemoDari($nilai, $appEnv));
     }
 }
