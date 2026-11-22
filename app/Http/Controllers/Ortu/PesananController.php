@@ -40,14 +40,14 @@ class PesananController extends Controller
             'sesi' => fn ($sesi) => $sesi->orderBy('waktu')->with('permintaanJadwalUlang'),
             'pembayaran' => fn ($pembayaran) => $pembayaran->orderBy('created_at'),
             'keluhan' => fn ($keluhan) => $keluhan->latest(),
-            'pengembalianDana',
+            'pengembalian' => fn ($pengembalian) => $pengembalian->withCount('sesi')->oldest(),
             'riwayat' => fn ($riwayat) => $riwayat->orderBy('dicatat_pada')->orderBy('id'),
         ]);
 
         return view('ortu.pesanan.show', [
             'pesanan' => $pesanan,
             'pilihanMetode' => MetodePembayaran::cases(),
-            'pilihanKeluhan' => JenisKeluhan::cases(),
+            'pilihanKeluhan' => JenisKeluhan::pilihanFormulir(),
             'kontak' => $kontakWhatsApp->untuk($request->user(), $pesanan),
         ]);
     }

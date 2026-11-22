@@ -3,7 +3,6 @@
 namespace Tests\Feature\Pesanan;
 
 use App\Enums\JenisNotifikasi;
-use App\Enums\Kehadiran;
 use App\Enums\StatusPengembalian;
 use App\Models\AkunPengguna;
 use App\Models\Pengaturan;
@@ -12,7 +11,7 @@ use App\Models\Pesanan;
 use App\Models\Siswa;
 use App\Models\Tutor;
 use App\Notifications\Pemberitahuan;
-use App\Services\AlurPesanan;
+use App\Services\KonfirmasiSesi;
 use App\Services\LaporanRingkasan;
 use App\Services\SaldoTutor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,17 +39,15 @@ class PengembalianDanaTest extends TestCase
     }
 
     /**
-     * A paid order of $pertemuan one-hour sessions, with $tercatat of them already held.
+     * A paid order of $pertemuan one-hour sessions (Rp80.000 each, 15% commission),
+     * with $dikonfirmasi of them held and confirmed, then cancelled by the admin.
      */
-    private function pesananDibatalkan(int $pertemuan = 4, int $tercatat = 1): Pesanan
+    private function pesananDibatalkan(int $pertemuan = 4, int $dikonfirmasi = 1): Pesanan
     {
         $siswa = Siswa::factory()->create();
         $this->ortu = $siswa->wali;
         $pesanan = $this->pesananDibayar($siswa, $this->tutor, ['jumlah_pertemuan' => $pertemuan]);
-
-        foreach ($pesanan->sesi()->orderBy('waktu')->take($tercatat)->get() as $sesi) {
-            app(AlurPesanan::class)->catatKehadiran($sesi, Kehadiran::Hadir, periksaWaktu: false);
-        }
+        $this->catatDanKonfirmasi($pesanan, $dikonfirmasi);
 
         $this->actingAs($this->admin)->post(route('admin.pesanan.batal', $pesanan), ['alasan' => 'Tutor pindah kota.']);
 
@@ -61,49 +58,60 @@ class PengembalianDanaTest extends TestCase
     {
         $pesanan = $this->pesananDibatalkan(4, 1);
 
-        $pengembalian = $pesanan->pengembalianDana;
+        $pengembalian = $pesanan->pengembalian()->sole();
         $this->assertSame('240000.00', $pengembalian->nominal);
-        $this->assertSame(1, $pengembalian->sesi_terlaksana);
+        $this->assertSame(3, $pengembalian->sesi()->count());
         $this->assertSame(StatusPengembalian::PerluDiproses, $pengembalian->status);
         $this->assertSame('batal', $pesanan->status->value);
         Notification::assertSentTo($this->ortu, Pemberitahuan::class, fn (Pemberitahuan $n) => $n->jenis === JenisNotifikasi::PesananDibatalkan && str_contains($n->pesan, 'Rp240.000'));
     }
 
-    public function test_the_refund_is_rounded_to_whole_rupiah(): void
+    public function test_the_refund_is_the_exact_value_of_the_sessions_it_covers(): void
     {
-        $this->tutor->profil->update(['tarif' => '100000.00']);
+        // Rp99.999,99 over 3 sessions: Rp33.333 + Rp33.333 + Rp33.333,99. One held, two refunded.
+        $this->tutor->profil->update(['tarif' => '33333.33']);
 
         $pesanan = $this->pesananDibatalkan(3, 1);
 
-        // 300.000 x 2/3 = 200.000 exactly.
-        $this->assertSame('200000.00', $pesanan->pengembalianDana->nominal);
-
-        // A total that does not divide evenly rounds half up to whole rupiah (100.000 x 2/3).
-        $this->assertSame('66667.00', (fn () => self::bulatkanRupiah(bcdiv('200000', '3', 4)))->call(app(AlurPesanan::class)));
+        $this->assertSame('99999.99', $pesanan->total_biaya);
+        $this->assertSame('66666.99', $pesanan->pengembalian()->sole()->nominal);
     }
 
-    public function test_commission_and_tutor_income_count_only_the_sessions_held_at_the_rate_charged_when_paid(): void
+    public function test_a_logged_session_keeps_going_through_confirmation_after_a_cancellation(): void
     {
         $siswa = Siswa::factory()->create();
+        $this->ortu = $siswa->wali;
         $pesanan = $this->pesananDibayar($siswa, $this->tutor, ['jumlah_pertemuan' => 4]);
-        app(AlurPesanan::class)->catatKehadiran($pesanan->sesi()->orderBy('waktu')->first(), Kehadiran::Hadir, periksaWaktu: false);
+        $this->catatDanKonfirmasi($pesanan, 1);
+        $this->catatDanKonfirmasi($pesanan, 1, konfirmasi: false);
 
-        // The rate changes after payment; the cancelled order keeps 15%.
+        $this->actingAs($this->admin)->post(route('admin.pesanan.batal', $pesanan), ['alasan' => 'Tutor pindah kota.']);
+
+        // Only the two sessions not logged are refunded now.
+        $this->assertSame('160000.00', $pesanan->pengembalian()->sole()->nominal);
+
+        // The parent disputes the logged one and the admin rules it not valid: it joins the open refund.
+        $menunggu = $pesanan->sesi()->where('status_konfirmasi', 'menunggu_konfirmasi')->sole();
+        app(KonfirmasiSesi::class)->sanggah($menunggu, $this->ortu, 'Tutor tidak datang sama sekali.');
+        app(KonfirmasiSesi::class)->putuskan($menunggu, $this->admin, false, 'Tutor mengakui tidak datang.');
+
+        $this->assertSame('240000.00', $pesanan->pengembalian()->sole()->nominal);
+        $this->assertSame('68000.00', app(SaldoTutor::class)->satu($this->tutor->id_tutor)['saldo']);
+    }
+
+    public function test_commission_stays_as_charged_and_only_confirmed_sessions_count(): void
+    {
+        $pesanan = $this->pesananDibatalkan(4, 1);
+
+        // The rate changing later does not touch this order.
         Pengaturan::simpan(Pengaturan::KOMISI_PERSEN, '20');
-        $this->actingAs($this->admin)->post(route('admin.pesanan.batal', $pesanan), ['alasan' => 'Tutor sakit lama.']);
 
         $komisi = $pesanan->komisi()->first();
         $this->assertSame('15.00', $komisi->persentase);
-        $this->assertSame('12000.00', $komisi->nominal);
-        $this->assertSame('48000.00', $komisi->nominal_sebelum_pengembalian);
+        $this->assertSame('48000.00', $komisi->nominal);
 
         $saldo = app(SaldoTutor::class)->satu($this->tutor->id_tutor);
-        $this->assertSame('80000.00', $saldo['pendapatan']);
-        $this->assertSame('12000.00', $saldo['komisi']);
-        $this->assertSame('68000.00', $saldo['saldo']);
-
-        $baris = app(SaldoTutor::class)->rincian($this->tutor->id_tutor)->sole();
-        $this->assertSame(['320000.00', '240000.00', '12000.00', '68000.00'], [$baris['total'], $baris['pengembalian'], $baris['komisi'], $baris['bersih']]);
+        $this->assertSame(['80000.00', '12000.00', '68000.00', '0.00'], [$saldo['pendapatan'], $saldo['komisi'], $saldo['saldo'], $saldo['ditahan']]);
     }
 
     public function test_cancelling_an_unpaid_order_creates_no_refund(): void
@@ -116,7 +124,7 @@ class PengembalianDanaTest extends TestCase
         $this->assertSame('0.00', app(SaldoTutor::class)->satu($this->tutor->id_tutor)['saldo']);
     }
 
-    public function test_the_summary_report_counts_refunds_and_the_lowered_commission(): void
+    public function test_the_summary_report_counts_refunds_and_only_confirmed_commission(): void
     {
         $this->pesananDibatalkan(4, 1);
 
@@ -126,13 +134,14 @@ class PengembalianDanaTest extends TestCase
         $this->assertSame(1, $r['jumlah_pengembalian']);
         $this->assertSame('320000.00', $r['total_transaksi']);
         $this->assertSame('12000.00', $r['pendapatan_komisi']);
+        $this->assertSame('0.00', $r['komisi_ditahan']);
         $this->actingAs($this->admin)->get(route('admin.beranda'))->assertSeeText('Pengembalian dana')->assertSeeText('Rp240.000');
     }
 
     public function test_admin_marks_the_refund_done_and_the_parent_is_told(): void
     {
         $pesanan = $this->pesananDibatalkan(4, 1);
-        $pengembalian = $pesanan->pengembalianDana;
+        $pengembalian = $pesanan->pengembalian()->sole();
 
         $this->actingAs($this->admin)->get(route('admin.pengembalian.index', ['status' => 'perlu_diproses']))->assertSeeText($pengembalian->id_pengembalian);
 
@@ -155,6 +164,6 @@ class PengembalianDanaTest extends TestCase
         $pesanan = $this->pesananDibatalkan(4, 1);
 
         $this->actingAs($this->ortu)->get(route('admin.pengembalian.index'))->assertForbidden();
-        $this->actingAs($this->ortu)->post(route('admin.pengembalian.selesai', $pesanan->pengembalianDana), ['catatan' => 'Sudah saya terima.'])->assertForbidden();
+        $this->actingAs($this->ortu)->post(route('admin.pengembalian.selesai', $pesanan->pengembalian()->sole()), ['catatan' => 'Sudah saya terima.'])->assertForbidden();
     }
 }

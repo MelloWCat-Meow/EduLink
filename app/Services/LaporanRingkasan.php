@@ -6,7 +6,6 @@ use App\Enums\StatusKeluhan;
 use App\Enums\StatusPembayaran;
 use App\Enums\StatusPesanan;
 use App\Models\Keluhan;
-use App\Models\KomisiBiayaLayanan;
 use App\Models\Pembayaran;
 use App\Models\PengembalianDana;
 use App\Models\Pesanan;
@@ -60,9 +59,10 @@ class LaporanRingkasan
             ->selectRaw('COUNT(*) as jumlah, COALESCE(SUM(jumlah), 0) as total')
             ->first();
 
-        // A cancelled paid order's commission row is lowered to the sessions held,
-        // so this is commission actually kept, counted in the month it was paid.
-        $komisi = KomisiBiayaLayanan::query()->whereBetween('created_at', $rentang)->sum('nominal');
+        // Commission is recognised per session, in the month that session was
+        // confirmed (by the parent, automatically, or by the admin's ruling).
+        // "Ditahan" is the commission of sessions not settled yet, right now.
+        [$komisi, $komisiDitahan] = $this->komisi($rentang);
 
         // Refunds by the month the admin cancelled the order (when the debt arose).
         $pengembalian = PengembalianDana::query()->whereBetween('created_at', $rentang)
@@ -85,7 +85,8 @@ class LaporanRingkasan
             'jumlah_pesanan' => array_sum($jumlahPerStatus),
             'total_transaksi' => bcadd((string) $transaksi->total, '0', 2),
             'jumlah_transaksi' => (int) $transaksi->jumlah,
-            'pendapatan_komisi' => bcadd((string) $komisi, '0', 2),
+            'pendapatan_komisi' => $komisi,
+            'komisi_ditahan' => $komisiDitahan,
             'total_pengembalian' => bcadd((string) $pengembalian->total, '0', 2),
             'jumlah_pengembalian' => (int) $pengembalian->jumlah,
             'tutor_menunggu_verifikasi' => Tutor::query()->menungguVerifikasi()->count(),
@@ -99,5 +100,31 @@ class LaporanRingkasan
                 ->get(),
             'pesanan_per_hari' => $perHari,
         ];
+    }
+
+    /**
+     * @param  array{0: Carbon, 1: Carbon}  $rentang
+     * @return array{0: string, 1: string} recognised in the period, held now
+     */
+    private function komisi(array $rentang): array
+    {
+        $diakui = '0.00';
+        $ditahan = '0.00';
+
+        $pesanan = Pesanan::query()->whereHas('komisi')->with(['komisi', 'sesi'])->get();
+
+        foreach ($pesanan as $satu) {
+            foreach (SaldoTutor::porsiSesi($satu) as $porsi) {
+                $dikonfirmasiPada = $porsi['sesi']->dikonfirmasi_pada;
+
+                if ($porsi['keadaan'] === 'tersedia' && $dikonfirmasiPada !== null && $dikonfirmasiPada->between($rentang[0], $rentang[1])) {
+                    $diakui = bcadd($diakui, $porsi['komisi'], 2);
+                } elseif ($porsi['keadaan'] === 'ditahan') {
+                    $ditahan = bcadd($ditahan, $porsi['komisi'], 2);
+                }
+            }
+        }
+
+        return [$diakui, $ditahan];
     }
 }

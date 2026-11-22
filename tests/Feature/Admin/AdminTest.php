@@ -213,8 +213,9 @@ class AdminTest extends TestCase
 
     public function test_payout_is_approved_within_the_balance_then_marked_paid(): void
     {
-        // Rp300.000 paid, 15% commission: balance Rp255.000.
+        // Rp300.000 paid, 15% commission, every session confirmed: balance Rp255.000.
         $pesanan = $this->pesananDibayar();
+        $this->catatDanKonfirmasi($pesanan);
         $tutor = $pesanan->tutor()->firstOrFail();
         $pencairan = $this->pengajuan($tutor, 200000);
 

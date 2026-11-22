@@ -48,7 +48,8 @@ php artisan schedule:work
 |---|---|---|
 | `edulink:lepas-penahanan` | setiap menit | Membatalkan pesanan yang tidak dijawab tutor atau tidak dibayar dalam 24 jam, dan melepas slotnya. |
 | `edulink:jadwal-ulang-kedaluwarsa` | setiap menit | Menandai pengajuan jadwal ulang yang tidak dijawab sampai waktu sesi semula. |
-| `edulink:pengingat-sesi` | setiap hari 07.00 | Mengirim pengingat H-1 ke orang tua dan tutor, sekali per sesi. |
+| `edulink:konfirmasi-otomatis` | setiap jam | Mengonfirmasi otomatis sesi yang tidak dikonfirmasi atau disanggah orang tua dalam 48 jam setelah dicatat tutor. |
+| `edulink:pengingat-sesi` | setiap hari 07.00 | Mengirim pengingat H-1 ke orang tua dan tutor, sekali per sesi. Tutor diingatkan kalau tautan meeting sesi besok belum diisi. |
 
 Pelepasan slot kedaluwarsa juga terjadi otomatis setiap kali halaman membaca pesanan atau jadwal, jadi demo tetap benar walaupun `schedule:work` tidak berjalan.
 
@@ -56,7 +57,7 @@ Email (tautan aktivasi, reset kata sandi, notifikasi penting) memakai mailer `lo
 
 ## Mode demo
 
-Payment gateway dan layanan video meeting belum tersambung, jadi keduanya disimulasikan. Mode demo diatur lewat `EDULINK_MODE_DEMO` di `.env`:
+Pembayaran disimulasikan: tidak ada payment gateway sungguhan yang tersambung. Sesi online memakai tautan Google Meet, Zoom, atau layanan lain milik tutor sendiri, yang dibagikan tutor dari detail pesanan; EduLink tidak menjalankan layanan video. Mode demo diatur lewat `EDULINK_MODE_DEMO` di `.env`:
 
 - Kosong: aktif kalau `APP_ENV` bernilai `local` atau `testing`, mati di environment lain.
 - `true`: aktif di mana saja, termasuk hosting dengan `APP_ENV=production` untuk presentasi.
@@ -67,7 +68,6 @@ Selama mode demo aktif:
 - Tombol **Bayar** membuka halaman gateway tiruan dengan pilihan Berhasil atau Gagal. Hasilnya dikirim ke `POST /webhooks/payment` dengan tanda tangan HMAC.
 - Tautan aktivasi tutor internal dan tautan reset kata sandi juga ditampilkan di layar dengan label "Mode demo", karena tidak ada kotak masuk sungguhan.
 - Perintah `edulink:simulasi-tutor` dan `edulink:simulasi-sesi` tersedia untuk demo cepat.
-- Pita "Mode demo: pembayaran disimulasikan" tampil di atas setiap halaman.
 
 ## Akun demo
 
@@ -76,9 +76,9 @@ Selama mode demo aktif:
 | Admin | admin@edulink.test | admin12345 | Admin Dewi Lestari |
 | Orang tua | siti.aminah@edulink.test | orangtua123 | Anak: Nadia (SD) dan Raka (SMP); punya pesanan di semua status |
 | Orang tua | budi.santoso@edulink.test | orangtua123 | Anak: Dimas (SMA) |
-| Tutor terverifikasi | rina.marlina@edulink.test | tutor12345 | Ada permintaan baru, sesi lewat yang belum dicatat, saldo, dan pencairan menunggu |
-| Tutor terverifikasi | andi.pratama@edulink.test | tutor12345 | Pesanan di semua status, termasuk menunggu pembayaran |
-| Tutor terverifikasi | dewi.anggraini@edulink.test | tutor12345 | Ada sesi besok (untuk pengingat H-1) |
+| Tutor terverifikasi | rina.marlina@edulink.test | tutor12345 | Permintaan baru, sesi lewat yang belum dicatat (pesanan online tanpa tautan meeting), sesi yang disanggah dan menunggu admin, saldo tersedia, dana ditahan, dan pencairan menunggu |
+| Tutor terverifikasi | andi.pratama@edulink.test | tutor12345 | Pesanan di semua status, sesi kemarin yang menunggu konfirmasi Budi, tautan Meet sudah diisi, saldo tersedia tanpa pengajuan menunggu |
+| Tutor terverifikasi | dewi.anggraini@edulink.test | tutor12345 | Sesi yang dikonfirmasi otomatis, sesi besok dengan tautan Zoom khusus (untuk pengingat H-1) |
 | Tutor menunggu verifikasi | nurul.aisyah@edulink.test, bayu.firmansyah@edulink.test | tutor12345 | Halaman "Sedang diperiksa" |
 | Tutor perlu perbaikan | intan.permata@edulink.test | tutor12345 | KTP ditolak dan profil diberi catatan |
 | Tutor draf | galih.prakoso@edulink.test | tutor12345 | Pendaftaran belum dikirim |
@@ -90,18 +90,30 @@ Semua langkah lewat tampilan, tanpa perintah simulasi. Pakai dua jendela browser
 
 1. **Orang tua memesan.** Masuk sebagai Siti, buka **Cari tutor**, pilih Andi Pratama, lalu **Pesan**. Pilih anak Raka, mapel Bahasa Inggris SMP, slot Kamis 19.00 (sengaja dibiarkan kosong di data demo), tanggal mulai, durasi, dan jumlah pertemuan. Periksa total, lalu konfirmasi.
 2. **Tutor menerima.** Masuk sebagai Andi. Lonceng notifikasi menunjukkan permintaan baru, dan Beranda menampilkan hitung mundur batas menjawab. Buka pesanan, lalu **Terima pesanan** (atau **Tolak** dengan alasan).
-3. **Orang tua membayar.** Kembali sebagai Siti, buka pesanan itu, pilih cara bayar, lalu **Bayar**. Di halaman gateway tiruan pilih **Berhasil**. Status menjadi Dibayar, jadwal sesi dibuat, dan tombol **Chat tutor via WhatsApp** muncul.
-4. **Jadwal ulang (opsional).** Di detail pesanan, salah satu pihak mengajukan jadwal ulang untuk sesi yang masih lebih dari 24 jam lagi; pihak lain menyetujui atau menolak.
-5. **Tutor mencatat sesi.** Masuk sebagai Rina, buka **Sesi**. Ada sesi yang sudah lewat dan belum dicatat. Pilih Hadir, tulis catatan, lalu simpan. Pesanan otomatis selesai setelah semua sesinya tercatat.
-6. **Ulasan.** Sebagai Siti, buka pesanan yang selesai (mis. Matematika SD dengan Rina), beri nilai dan komentar. Rina menerima notifikasi ulasan baru.
-7. **Admin.**
-   - **Ringkasan:** angka per periode, grafik, **Unduh CSV**, dan **Cetak**.
+3. **Orang tua membayar.** Kembali sebagai Siti, buka pesanan itu, pilih cara bayar, lalu **Bayar**. Di halaman gateway tiruan pilih **Berhasil** (pembayaran disimulasikan). Status menjadi Dibayar, jadwal sesi dibuat, dan tombol **Chat tutor via WhatsApp** muncul.
+4. **Tutor membagikan tautan meeting.** Sebagai Andi, buka pesanan itu, isi **Tautan meeting pesanan** dengan tautan Google Meet atau Zoom miliknya. Tautan bisa diganti khusus untuk satu sesi. Sebelum diisi, Siti melihat "Tutor belum membagikan tautan meeting".
+5. **Jadwal ulang (opsional).** Di detail pesanan, salah satu pihak mengajukan jadwal ulang untuk sesi yang masih lebih dari 24 jam lagi; pihak lain menyetujui atau menolak.
+6. **Tutor mencatat sesi.** Masuk sebagai Rina, buka **Sesi**. Ada sesi IPA SD Nadia yang sudah lewat dan belum dicatat. Pilih **Terlaksana** (atau **Siswa tidak hadir**), tulis catatan materi, lalu simpan. Sesi menunggu konfirmasi orang tua, dan bagian Rina untuk sesi itu tampil sebagai **Dana ditahan** di **Pendapatan**.
+7. **Orang tua mengonfirmasi atau menyanggah.** Sebagai Siti, buka Beranda: kartu "Sesi menunggu konfirmasi Anda" menampilkan sisa waktunya. Klik **Konfirmasi sesi** (bisa juga langsung dari halaman notifikasi), atau **Sanggah** dengan alasan. Setelah dikonfirmasi, bagian Rina pindah dari dana ditahan ke **saldo tersedia**. Pesanan baru selesai saat semua sesinya dikonfirmasi.
+8. **Admin memutuskan sanggahan.** Masuk sebagai admin, buka **Keluhan**. Ada sanggahan Siti atas sesi Rina sebelumnya (jenis "Sanggahan sesi"). Pilih **Sesi sah** atau **Sesi tidak sah** dengan alasan. Kalau tidak sah, biaya sesi itu masuk **Pengembalian dana** untuk Siti dan Rina tidak dibayar untuk sesi itu.
+9. **Tutor mengajukan pencairan.** Masuk sebagai Andi, buka **Pendapatan**, ajukan pencairan sebesar saldo tersedia atau kurang. Dana ditahan tidak bisa dicairkan.
+10. **Admin menyetujui.** Sebagai admin, buka **Pencairan dana**, setujui pengajuan Andi (atau pengajuan Rina yang sudah menunggu), lalu tandai dibayar setelah transfer.
+11. **Ulasan.** Sebagai Siti, buka pesanan yang selesai (mis. Matematika SD dengan Rina), beri nilai dan komentar.
+12. **Admin, lainnya.**
+   - **Ringkasan:** komisi diakui per sesi yang dikonfirmasi pada periode itu, komisi ditahan, grafik, **Unduh CSV**, dan **Cetak**.
    - **Verifikasi tutor:** setujui Nurul, atau minta perbaikan.
-   - **Pesanan:** batalkan pesanan yang sudah dibayar dengan alasan; pengembalian dana tercatat otomatis.
-   - **Pengembalian dana:** tandai selesai.
-   - **Pencairan dana:** setujui pengajuan Rina.
-   - **Kelola tutor:** ubah mata pelajaran dengan alasan.
-   - **Data pengguna:** nonaktifkan atau aktifkan akun.
+   - **Pesanan:** batalkan pesanan yang sudah dibayar dengan alasan; biaya sesi yang belum dicatat otomatis masuk pengembalian dana.
+   - **Kelola tutor** dan **Data pengguna:** ubah mata pelajaran, nonaktifkan atau aktifkan akun.
+
+### Mempercepat konfirmasi otomatis untuk demo
+
+Konfirmasi otomatis normalnya terjadi 48 jam setelah tutor mencatat sesi. Untuk demo, jalankan:
+
+```bash
+php artisan edulink:konfirmasi-otomatis --setelah=0
+```
+
+Semua sesi yang menunggu konfirmasi langsung dikonfirmasi otomatis, dan kedua pihak menerima notifikasi. Opsi `--setelah` (jumlah jam) hanya boleh diubah dari 48 saat mode demo aktif. Tanpa opsi, perintah ini sama dengan yang dijalankan terjadwal setiap jam.
 
 Alur pendaftaran tutor:
 

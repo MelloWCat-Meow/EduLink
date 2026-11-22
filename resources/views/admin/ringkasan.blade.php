@@ -20,10 +20,11 @@
         </x-slot:actions>
     </x-dasbor.judul>
 
-    <dl class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <dl class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         @foreach ([
             ['Transaksi berhasil', Format::rupiah($r['total_transaksi']), $r['jumlah_transaksi'].' pembayaran', null],
-            ['Pendapatan komisi', Format::rupiah($r['pendapatan_komisi']), 'dari pembayaran bulan ini', route('admin.komisi.edit')],
+            ['Pendapatan komisi', Format::rupiah($r['pendapatan_komisi']), 'dari sesi yang dikonfirmasi bulan ini', route('admin.komisi.edit')],
+            ['Komisi ditahan', Format::rupiah($r['komisi_ditahan']), 'sesi belum dikonfirmasi, saat ini', null],
             ['Pengembalian dana', Format::rupiah($r['total_pengembalian']), $r['jumlah_pengembalian'].' pesanan dibatalkan bulan ini', route('admin.pengembalian.index')],
             ['Tutor menunggu verifikasi', $r['tutor_menunggu_verifikasi'], 'antrean saat ini', route('admin.verifikasi.index')],
             ['Keluhan terbuka', $r['keluhan_terbuka'], 'baru atau diproses', route('admin.keluhan.index')],

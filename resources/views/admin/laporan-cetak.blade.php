@@ -23,7 +23,8 @@
                 <tbody>
                     <tr><th scope="row">Pesanan dibuat</th><td class="angka text-right">{{ $r['jumlah_pesanan'] }}</td></tr>
                     <tr><th scope="row">Transaksi berhasil ({{ $r['jumlah_transaksi'] }} pembayaran)</th><td class="angka text-right">{{ Format::rupiah($r['total_transaksi']) }}</td></tr>
-                    <tr><th scope="row">Pendapatan komisi</th><td class="angka text-right">{{ Format::rupiah($r['pendapatan_komisi']) }}</td></tr>
+                    <tr><th scope="row">Pendapatan komisi (sesi dikonfirmasi pada periode ini)</th><td class="angka text-right">{{ Format::rupiah($r['pendapatan_komisi']) }}</td></tr>
+                    <tr><th scope="row">Komisi ditahan (sesi belum dikonfirmasi, saat dicetak)</th><td class="angka text-right">{{ Format::rupiah($r['komisi_ditahan']) }}</td></tr>
                     <tr><th scope="row">Pengembalian dana ({{ $r['jumlah_pengembalian'] }} pesanan)</th><td class="angka text-right">{{ Format::rupiah($r['total_pengembalian']) }}</td></tr>
                     <tr><th scope="row">Tutor menunggu verifikasi (saat dicetak)</th><td class="angka text-right">{{ $r['tutor_menunggu_verifikasi'] }}</td></tr>
                     <tr><th scope="row">Keluhan terbuka (saat dicetak)</th><td class="angka text-right">{{ $r['keluhan_terbuka'] }}</td></tr>
@@ -80,6 +81,6 @@
             @endif
         </section>
 
-        <p class="mt-8 text-[0.8125rem] text-pensil-muda">Pesanan dihitung menurut tanggal dibuat, transaksi menurut tanggal pembayaran diproses, komisi menurut tanggal pembayaran (sudah disesuaikan bila ada pengembalian), dan pengembalian menurut tanggal pembatalan.</p>
+        <p class="mt-8 text-[0.8125rem] text-pensil-muda">Pesanan dihitung menurut tanggal dibuat, transaksi menurut tanggal pembayaran diproses, komisi per sesi menurut tanggal sesi dikonfirmasi, dan pengembalian menurut tanggal dicatat.</p>
     </main>
 </x-layouts.app>

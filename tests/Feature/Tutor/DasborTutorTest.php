@@ -131,7 +131,7 @@ class DasborTutorTest extends TestCase
         $this->assertSame(StatusPesanan::MenungguKonfirmasiTutor, $milikLain->refresh()->status);
     }
 
-    public function test_a_session_can_be_logged_only_once_it_has_started_and_the_order_finishes_after_the_last_one(): void
+    public function test_a_session_can_be_logged_only_once_it_has_started_and_then_waits_for_the_parent(): void
     {
         $pesanan = $this->pesananDibayar(tutor: $this->tutor, ubah: ['jumlah_pertemuan' => 2]);
         [$pertama, $kedua] = $pesanan->sesi()->orderBy('waktu')->get();
@@ -147,9 +147,11 @@ class DasborTutorTest extends TestCase
 
         $this->travelTo($kedua->waktu->copy()->addMinutes(10));
         $this->actingAs($this->akun)->post(route('tutor.sesi.catat', $kedua), ['kehadiran' => 'tidak_hadir'])
-            ->assertSessionHas('status', fn (string $pesan) => str_contains($pesan, 'pesanan selesai'));
+            ->assertSessionHas('status', fn (string $pesan) => str_contains($pesan, 'menunggu konfirmasi orang tua'));
 
-        $this->assertSame(StatusPesanan::Selesai, $pesanan->refresh()->status);
+        // Every session logged, but the order only finishes once the parent confirms them.
+        $this->assertSame(StatusPesanan::Dibayar, $pesanan->refresh()->status);
+        $this->assertSame('menunggu_konfirmasi', $kedua->refresh()->status_konfirmasi->value);
         $this->actingAs($this->akun)->post(route('tutor.sesi.catat', $kedua), ['kehadiran' => 'hadir'])->assertSessionHas('galat');
     }
 

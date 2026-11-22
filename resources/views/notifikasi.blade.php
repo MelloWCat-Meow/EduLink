@@ -27,8 +27,8 @@
             <ul class="divide-y divide-pensil/12">
                 @foreach ($daftarNotifikasi as $notifikasi)
                     @php($baru = $notifikasi->read_at === null)
-                    <li @class(['flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-4', 'bg-langit/35 -mx-3 px-3' => $baru])>
-                        <div class="min-w-0 flex-1">
+                    <li @class(['flex flex-wrap items-start justify-end gap-x-3 gap-y-2 py-4', 'bg-langit/35 -mx-3 px-3' => $baru])>
+                        <div class="min-w-0 flex-1 basis-[18rem]">
                             <p class="flex flex-wrap items-center gap-2">
                                 @if ($baru)
                                     <x-dasbor.label tone="info">Baru</x-dasbor.label>
@@ -38,6 +38,14 @@
                             <p class="mt-0.5">{{ $notifikasi->data['pesan'] ?? '' }}</p>
                             <p class="mt-0.5 text-[0.8125rem] text-pensil-muda">{{ Format::waktu($notifikasi->created_at) }} · {{ $notifikasi->created_at->diffForHumans() }}</p>
                         </div>
+                        @if (($notifikasi->data['jenis'] ?? null) === 'sesi_dicatat' && isset($notifikasi->data['id_sesi']) && $akun->hasPeran(Peran::Ortu) && in_array($notifikasi->data['id_sesi'], $sesiMenunggu, true))
+                            {{-- Confirm straight from the notification; disputing needs a reason, on the order page. --}}
+                            <form method="post" action="{{ route('sesi.konfirmasi', $notifikasi->data['id_sesi']) }}">
+                                @csrf
+                                <button type="submit" class="tombol min-h-10">Konfirmasi</button>
+                            </form>
+                            <a href="{{ $notifikasi->data['tautan'] }}" class="tombol-garis tombol-bahaya min-h-10">Sanggah</a>
+                        @endif
                         <form method="post" action="{{ route('notifikasi.buka', $notifikasi->id) }}">
                             @csrf
                             <button type="submit" class="tombol-garis min-h-10">{{ $baru ? 'Buka dan tandai dibaca' : 'Buka' }}<span class="sr-only">: {{ $notifikasi->data['judul'] ?? '' }}</span></button>
