@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $persentase
  * @property string $nominal
  */
-#[Fillable(['persentase', 'nominal', 'nominal_sebelum_pengembalian'])]
+#[Fillable(['persentase', 'nominal'])]
 class KomisiBiayaLayanan extends Model
 {
     use HasPrefixedKey;
@@ -40,7 +40,6 @@ class KomisiBiayaLayanan extends Model
     {
         return [
             'persentase' => 'decimal:2',
-            'nominal_sebelum_pengembalian' => 'decimal:2',
             'nominal' => 'decimal:2',
         ];
     }

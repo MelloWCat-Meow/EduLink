@@ -47,11 +47,13 @@ class SimulasiPerintahTest extends TestCase
         $sesi = $pesanan->sesi()->firstOrFail();
 
         $this->artisan('edulink:simulasi-sesi', ['id_sesi' => $sesi->id_sesi, 'kehadiran' => 'hadir', '--catatan' => 'Bab pecahan.'])
-            ->expectsOutputToContain('Selesai')
+            ->expectsOutputToContain('Dibayar')
             ->assertSuccessful();
 
+        // Logged, now waiting for the parent; the order finishes once it is confirmed.
         $this->assertSame('hadir', $sesi->refresh()->kehadiran->value);
-        $this->assertSame(StatusPesanan::Selesai, $pesanan->refresh()->status);
+        $this->assertSame('menunggu_konfirmasi', $sesi->status_konfirmasi->value);
+        $this->assertSame(StatusPesanan::Dibayar, $pesanan->refresh()->status);
     }
 
     public function test_session_simulation_rejects_an_unknown_attendance_value(): void

@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property string $tarif_per_jam
  * @property string $total_biaya
  * @property Carbon|null $ditahan_hingga
+ * @property string|null $tautan_meeting
  * @property Carbon $created_at
  */
 #[Fillable(['id_siswa', 'id_tutor', 'kode_mapel', 'id_jadwal', 'durasi', 'mode', 'tanggal_mulai', 'jumlah_pertemuan', 'tarif_per_jam', 'total_biaya'])]
@@ -147,11 +148,13 @@ class Pesanan extends Model
     }
 
     /**
-     * @return HasOne<PengembalianDana, $this>
+     * Refunds for this order's sessions; usually none, sometimes several.
+     *
+     * @return HasMany<PengembalianDana, $this>
      */
-    public function pengembalianDana(): HasOne
+    public function pengembalian(): HasMany
     {
-        return $this->hasOne(PengembalianDana::class, 'id_pesanan', 'id_pesanan');
+        return $this->hasMany(PengembalianDana::class, 'id_pesanan', 'id_pesanan');
     }
 
     /**

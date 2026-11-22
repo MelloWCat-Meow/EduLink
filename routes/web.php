@@ -24,6 +24,7 @@ use App\Http\Controllers\Ortu\AkunController;
 use App\Http\Controllers\Ortu\AnakController;
 use App\Http\Controllers\Ortu\BayarController;
 use App\Http\Controllers\Ortu\KeluhanController;
+use App\Http\Controllers\Ortu\KonfirmasiSesiController;
 use App\Http\Controllers\Ortu\PembayaranController;
 use App\Http\Controllers\Ortu\PesananController;
 use App\Http\Controllers\Ortu\PesanTutorController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\Tutor\PesananTutorController;
 use App\Http\Controllers\Tutor\ProfilSayaController;
 use App\Http\Controllers\Tutor\SesiTutorController;
 use App\Http\Controllers\Tutor\StatusPendaftaranController;
+use App\Http\Controllers\Tutor\TautanMeetingController;
 use App\Http\Controllers\Tutor\UlasanTutorController;
 use App\Http\Controllers\TutorController;
 use Illuminate\Support\Facades\Route;
@@ -125,6 +127,9 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
         Route::post('/pesanan/{pesanan}/ulasan', [UlasanController::class, 'store'])->name('pesanan.ulasan')->can('update', 'pesanan');
         Route::post('/pesanan/{pesanan}/keluhan', [KeluhanController::class, 'store'])->name('pesanan.keluhan')->can('update', 'pesanan');
 
+        Route::post('/sesi/{sesi}/konfirmasi', [KonfirmasiSesiController::class, 'konfirmasi'])->name('sesi.konfirmasi');
+        Route::post('/sesi/{sesi}/sanggah', [KonfirmasiSesiController::class, 'sanggah'])->name('sesi.sanggah');
+
         Route::get('/pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
         Route::get('/keluhan', [KeluhanController::class, 'index'])->name('keluhan.index');
 
@@ -156,6 +161,7 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
         Route::get('/keluhan', [AdminKeluhanController::class, 'index'])->name('keluhan.index');
         Route::get('/keluhan/{keluhan}', [AdminKeluhanController::class, 'show'])->name('keluhan.show');
         Route::put('/keluhan/{keluhan}', [AdminKeluhanController::class, 'update'])->name('keluhan.update');
+        Route::post('/keluhan/{keluhan}/putusan', [AdminKeluhanController::class, 'putuskan'])->name('keluhan.putusan');
 
         Route::get('/ulasan', [AdminUlasanController::class, 'index'])->name('ulasan.index');
         Route::put('/ulasan/{ulasan}', [AdminUlasanController::class, 'update'])->name('ulasan.update');
@@ -200,6 +206,8 @@ Route::middleware(['auth', 'lepas-penahanan'])->group(function (): void {
             Route::post('/pesanan/{pesanan}/tolak', [PesananTutorController::class, 'tolak'])->name('pesanan.tolak')->can('kelolaTutor', 'pesanan');
             Route::post('/pesanan/{pesanan}/batal', [PesananTutorController::class, 'batal'])->name('pesanan.batal')->can('kelolaTutor', 'pesanan');
             Route::post('/pesanan/{pesanan}/keluhan', [KeluhanTutorController::class, 'store'])->name('pesanan.keluhan')->can('kelolaTutor', 'pesanan');
+            Route::put('/pesanan/{pesanan}/tautan-meeting', [TautanMeetingController::class, 'pesanan'])->name('pesanan.tautan')->can('kelolaTutor', 'pesanan');
+            Route::put('/sesi/{sesi}/tautan-meeting', [TautanMeetingController::class, 'sesi'])->name('sesi.tautan')->can('catat', 'sesi');
 
             Route::get('/sesi', [SesiTutorController::class, 'index'])->name('sesi.index');
             Route::post('/sesi/{sesi}/kehadiran', [SesiTutorController::class, 'catat'])->name('sesi.catat')->can('catat', 'sesi');

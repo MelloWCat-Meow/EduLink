@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tutor\CatatSesiRequest;
 use App\Models\SesiPembelajaran;
 use App\Services\AlurPesanan;
+use App\Services\KonfirmasiSesi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,11 +36,6 @@ class SesiTutorController extends Controller
     {
         $alurPesanan->catatKehadiran($sesi, Kehadiran::from($request->validated('kehadiran')), $request->validated('catatan'), oleh: $request->user());
 
-        $pesanan = $sesi->pesanan()->firstOrFail();
-        $pesan = $pesanan->status === StatusPesanan::Selesai
-            ? "Sesi tercatat. Semua sesi pesanan {$pesanan->id_pesanan} sudah tercatat, jadi pesanan selesai."
-            : 'Sesi tercatat.';
-
-        return back()->with('status', $pesan);
+        return back()->with('status', 'Sesi tercatat dan menunggu konfirmasi orang tua. Tanpa jawaban dalam '.KonfirmasiSesi::BATAS_JAM.' jam, sesi dikonfirmasi otomatis dan bagian Anda masuk saldo.');
     }
 }

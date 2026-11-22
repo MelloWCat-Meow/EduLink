@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\StatusPembayaran;
-use App\Models\KomisiBiayaLayanan;
 use App\Models\Pembayaran;
 use App\Models\PencairanDanaTutor;
 use App\Models\PengembalianDana;
@@ -16,7 +15,7 @@ use Illuminate\Support\Carbon;
  * cleanly in Excel set to Indonesian: UTF-8 with BOM, semicolons between
  * fields, CRLF line ends, whole-rupiah amounts without thousands separators,
  * and dates as YYYY-MM-DD HH:MM. Each section uses the same date the summary
- * page uses for it.
+ * page uses for it; commission is listed per confirmed session.
  */
 class EksporLaporan
 {
@@ -55,13 +54,30 @@ class EksporLaporan
         $baris[] = ['Jumlah', (string) $pembayaran->count(), '', '', $this->rupiah($pembayaran->sum('jumlah'))];
         $baris[] = [];
 
-        $komisi = KomisiBiayaLayanan::query()->whereBetween('created_at', $rentang)->orderBy('created_at')->get();
-        $baris[] = ['KOMISI PLATFORM (menurut tanggal pembayaran; sudah disesuaikan bila ada pengembalian)'];
-        $baris[] = ['ID komisi', 'Tanggal', 'ID pesanan', 'Persentase', 'Nominal (Rp)', 'Nominal awal (Rp)'];
-        foreach ($komisi as $k) {
-            $baris[] = [$k->id_komisi, $this->waktu($k->created_at), $k->id_pesanan, str_replace('.', ',', rtrim(rtrim((string) $k->persentase, '0'), '.')), $this->rupiah($k->nominal), $k->nominal_sebelum_pengembalian !== null ? $this->rupiah($k->nominal_sebelum_pengembalian) : ''];
+        // Commission is recognised per session, in the month the session was confirmed.
+        $diakui = [];
+        $ditahan = '0.00';
+        foreach (Pesanan::query()->whereHas('komisi')->with(['komisi', 'sesi'])->get() as $p) {
+            foreach (SaldoTutor::porsiSesi($p) as $porsi) {
+                $pada = $porsi['sesi']->dikonfirmasi_pada;
+                if ($porsi['keadaan'] === 'tersedia' && $pada !== null && $pada->between($rentang[0], $rentang[1])) {
+                    $diakui[] = [$p, $porsi];
+                } elseif ($porsi['keadaan'] === 'ditahan') {
+                    $ditahan = bcadd($ditahan, $porsi['komisi'], 2);
+                }
+            }
         }
-        $baris[] = ['Jumlah', (string) $komisi->count(), '', '', $this->rupiah($komisi->sum('nominal')), ''];
+        usort($diakui, fn (array $a, array $b): int => $a[1]['sesi']->dikonfirmasi_pada <=> $b[1]['sesi']->dikonfirmasi_pada);
+
+        $baris[] = ['KOMISI PLATFORM DIAKUI (per sesi, menurut tanggal sesi dikonfirmasi)'];
+        $baris[] = ['ID sesi', 'Tanggal dikonfirmasi', 'ID pesanan', 'Dikonfirmasi oleh', 'Persentase', 'Nilai sesi (Rp)', 'Komisi (Rp)'];
+        $totalKomisi = '0.00';
+        foreach ($diakui as [$p, $porsi]) {
+            $baris[] = [$porsi['sesi']->id_sesi, $this->waktu($porsi['sesi']->dikonfirmasi_pada), $p->id_pesanan, (string) $porsi['sesi']->dikonfirmasi_oleh, str_replace('.', ',', rtrim(rtrim((string) $p->komisi->persentase, '0'), '.')), $this->rupiah($porsi['nilai']), $this->rupiah($porsi['komisi'])];
+            $totalKomisi = bcadd($totalKomisi, $porsi['komisi'], 2);
+        }
+        $baris[] = ['Jumlah', (string) count($diakui), '', '', '', '', $this->rupiah($totalKomisi)];
+        $baris[] = ['Komisi ditahan (sesi belum dikonfirmasi, saat laporan dibuat)', '', '', '', '', '', $this->rupiah($ditahan)];
         $baris[] = [];
 
         $pencairan = PencairanDanaTutor::query()->whereBetween('created_at', $rentang)->with('tutor')->orderBy('created_at')->get();
@@ -73,11 +89,11 @@ class EksporLaporan
         $baris[] = ['Jumlah', (string) $pencairan->count(), '', '', '', $this->rupiah($pencairan->sum('nominal'))];
         $baris[] = [];
 
-        $pengembalian = PengembalianDana::query()->whereBetween('created_at', $rentang)->with('pesanan.siswa.wali')->orderBy('created_at')->get();
-        $baris[] = ['PENGEMBALIAN DANA (menurut tanggal pembatalan)'];
-        $baris[] = ['ID pengembalian', 'Tanggal', 'ID pesanan', 'Orang tua', 'Sesi terlaksana', 'Status', 'Nominal (Rp)'];
+        $pengembalian = PengembalianDana::query()->whereBetween('created_at', $rentang)->with('pesanan.siswa.wali')->withCount('sesi')->orderBy('created_at')->get();
+        $baris[] = ['PENGEMBALIAN DANA (menurut tanggal dicatat)'];
+        $baris[] = ['ID pengembalian', 'Tanggal', 'ID pesanan', 'Orang tua', 'Sesi dikembalikan', 'Status', 'Nominal (Rp)'];
         foreach ($pengembalian as $r) {
-            $baris[] = [$r->id_pengembalian, $this->waktu($r->created_at), $r->id_pesanan, $r->pesanan->siswa->wali->nama, (string) $r->sesi_terlaksana, $r->status->label(), $this->rupiah($r->nominal)];
+            $baris[] = [$r->id_pengembalian, $this->waktu($r->created_at), $r->id_pesanan, $r->pesanan->siswa->wali->nama, (string) $r->sesi_count, $r->status->label(), $this->rupiah($r->nominal)];
         }
         $baris[] = ['Jumlah', (string) $pengembalian->count(), '', '', '', '', $this->rupiah($pengembalian->sum('nominal'))];
 

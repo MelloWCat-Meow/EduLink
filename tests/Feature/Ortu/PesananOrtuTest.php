@@ -58,7 +58,7 @@ class PesananOrtuTest extends TestCase
             ->assertSeeText('Tutor menerima pesanan.')
             ->assertSeeText('Rp300.000')
             ->assertSeeText('Pertemuan 4')
-            ->assertSeeText('Ruang meeting');
+            ->assertSeeText('Tutor belum membagikan tautan meeting.');
     }
 
     #[TestWith(['get', 'pesanan.show'])]
