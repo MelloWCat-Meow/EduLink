@@ -12,6 +12,8 @@
         <meta name="theme-color" content="#fdfdf9">
 
         <title>{{ $title ? $title.' | EduLink Tutor' : 'EduLink Tutor: guru les privat di Kota Jambi' }}</title>
+        <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
+        <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>

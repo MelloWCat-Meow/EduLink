@@ -19,6 +19,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="noindex">
         <title>{{ $judul }} | EduLink Tutor</title>
+        <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
+        <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
         @if ($css)
             <link rel="stylesheet" href="{{ $css }}">
         @endif
