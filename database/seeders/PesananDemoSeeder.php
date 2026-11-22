@@ -7,6 +7,7 @@ use App\Enums\JenisKeluhan;
 use App\Enums\Kehadiran;
 use App\Enums\MetodePembayaran;
 use App\Enums\ModeBelajar;
+use App\Enums\StatusJadwal;
 use App\Enums\StatusKeluhan;
 use App\Enums\StatusPembayaran;
 use App\Enums\StatusPencairan;
@@ -24,6 +25,7 @@ use App\Services\PemrosesPembayaran;
 use Closure;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 
 /**
  * Orders in every status for the seeded parents, built through the same
@@ -205,7 +207,7 @@ class PesananDemoSeeder extends Seeder
     private function pesan(Siswa $siswa, AkunPengguna $wali, string $namaTutor, string $kodeMapel, Hari $hari, ModeBelajar $mode, int $durasi, int $jumlahPertemuan, Carbon $dibuat, ?string $jam = null): Pesanan
     {
         $tutor = Tutor::query()->with('profil')->where('nama', $namaTutor)->firstOrFail();
-        $jadwal = JadwalKetersediaan::query()->where('id_tutor', $tutor->id_tutor)->where('hari', $hari)->when($jam, fn ($query) => $query->where('jam', $jam))->firstOrFail();
+        $jadwal = $this->slotTersedia($tutor, $hari, $jam);
         $mulai = $dibuat->copy()->addDays(2)->startOfDay();
 
         while ($mulai->isoWeekday() !== $hari->isoWeekday()) {
@@ -222,6 +224,39 @@ class PesananDemoSeeder extends Seeder
             'tanggal_mulai' => $mulai,
             'jumlah_pertemuan' => $jumlahPertemuan,
         ], $wali));
+    }
+
+    /**
+     * A free slot of the tutor on that day (and time, when given). Only free
+     * slots are picked: a tutor may have two slots on one day, for example the
+     * fixed Monday slot and the dynamic "tomorrow" slot when the seeder runs on
+     * a Sunday, and one of them may already be held or taken by another order.
+     */
+    private function slotTersedia(Tutor $tutor, Hari $hari, ?string $jam): JadwalKetersediaan
+    {
+        $slot = JadwalKetersediaan::query()
+            ->where('id_tutor', $tutor->id_tutor)
+            ->where('hari', $hari)
+            ->where('status', StatusJadwal::Tersedia)
+            ->when($jam, fn ($query) => $query->where('jam', $jam))
+            ->orderBy('jam')
+            ->first();
+
+        if ($slot !== null) {
+            return $slot;
+        }
+
+        $ada = JadwalKetersediaan::query()->where('id_tutor', $tutor->id_tutor)->where('hari', $hari)->orderBy('jam')->get()
+            ->map(fn (JadwalKetersediaan $slot): string => substr((string) $slot->jam, 0, 5).' ('.$slot->status->value.')')
+            ->implode(', ');
+
+        throw new RuntimeException(sprintf(
+            'PesananDemoSeeder: tidak ada slot tersedia untuk %s pada hari %s%s. Slot hari itu: %s.',
+            $tutor->nama,
+            $hari->value,
+            $jam ? ' jam '.substr($jam, 0, 5) : '',
+            $ada !== '' ? $ada : 'tidak ada',
+        ));
     }
 
     private function terimaDanBayar(Pesanan $pesanan, MetodePembayaran $metode): void
