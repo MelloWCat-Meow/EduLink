@@ -25,6 +25,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'lepas-penahanan' => LepasPenahananKedaluwarsa::class,
         ]);
 
+        // A tunnel such as ngrok runs on this machine and forwards HTTPS as plain
+        // HTTP with X-Forwarded-* headers. Trusting only the local proxy makes
+        // URLs (CSS, JS, links) come out as https without letting outside
+        // clients spoof those headers.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+
         // The payment gateway cannot send a CSRF token; webhooks are checked by signature.
         $middleware->validateCsrfTokens(except: ['webhooks/*']);
 
