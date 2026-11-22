@@ -19,7 +19,7 @@ class KeluhanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'jenis' => ['required', Rule::enum(JenisKeluhan::class)],
+            'jenis' => ['required', Rule::enum(JenisKeluhan::class)->except(JenisKeluhan::SesiDisanggah)],
             'deskripsi' => ['required', 'string', 'min:10', 'max:2000'],
         ];
     }

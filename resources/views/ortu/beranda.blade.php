@@ -10,7 +10,7 @@
         </p>
     @endif
 
-    @php($adaTugas = $menungguBayar->isNotEmpty() || $sesiTerdekat || $belumDiulas->isNotEmpty() || $jumlahAnak === 0)
+    @php($adaTugas = $menungguKonfirmasi->isNotEmpty() || $menungguBayar->isNotEmpty() || $sesiTerdekat || $belumDiulas->isNotEmpty() || $jumlahAnak === 0)
 
     <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
         {{-- The to-do list is the one sticky note on the page. --}}
@@ -26,6 +26,20 @@
                             <p class="font-bold">Tambahkan data anak</p>
                             <p class="text-[0.9375rem]">Pesanan selalu dibuat untuk seorang anak, jadi datanya perlu ada lebih dulu.</p>
                             <a href="{{ route('anak.index') }}" class="tautan mt-1 inline-block">Tambah anak</a>
+                        </li>
+                    @endif
+
+                    @if ($menungguKonfirmasi->isNotEmpty())
+                        <li class="py-3">
+                            <p class="font-bold">Sesi menunggu konfirmasi Anda ({{ $menungguKonfirmasi->count() }})</p>
+                            <ul class="mt-1 space-y-2">
+                                @foreach ($menungguKonfirmasi as $sesi)
+                                    <li class="text-[0.9375rem]">
+                                        <a href="{{ route('pesanan.show', $sesi->id_pesanan) }}#sesi-{{ $sesi->id_sesi }}" class="tautan">{{ $sesi->pesanan->mapel->label() }} untuk {{ $sesi->pesanan->siswa->nama }}, {{ Format::waktu($sesi->waktu) }}</a>
+                                        <x-dasbor.hitung-mundur :batas="$sesi->batasKonfirmasi()" awalan="Sisa waktu konfirmasi" />
+                                    </li>
+                                @endforeach
+                            </ul>
                         </li>
                     @endif
 
@@ -45,11 +59,7 @@
                         <li class="py-3">
                             <p class="font-bold">Sesi terdekat: {{ Format::waktu($sesiTerdekat->waktu, true) }}</p>
                             <p class="text-[0.9375rem]">{{ $p->mapel->label() }} untuk {{ $p->siswa->nama }} dengan {{ $p->tutor->nama }}.</p>
-                            @if ($sesiTerdekat->tautan_meeting)
-                                <a href="{{ $sesiTerdekat->tautan_meeting }}" class="tautan mt-1 inline-block" rel="noopener" target="_blank">Buka ruang meeting</a>
-                            @else
-                                <p class="text-[0.9375rem]">Tutor datang ke rumah.</p>
-                            @endif
+                            <x-dasbor.tautan-meeting :sesi="$sesiTerdekat" :pesanan="$p" class="mt-1 inline-block" />
                         </li>
                     @endif
 

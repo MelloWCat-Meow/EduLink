@@ -10,6 +10,7 @@ use App\Exceptions\TransisiStatusTidakSah;
 use App\Models\AkunPengguna;
 use App\Models\Pengaturan;
 use App\Services\AlurPesanan;
+use App\Services\KonfirmasiSesi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\MembuatPesanan;
 use Tests\TestCase;
@@ -193,20 +194,27 @@ class AlurPesananTest extends TestCase
         $this->assertCount(3, $sesi);
         $this->assertSame($pesanan->tanggal_mulai->toDateString().' '.$jadwal->jam, $sesi[0]->waktu->toDateTimeString());
         $this->assertSame(7, (int) $sesi[0]->waktu->diffInDays($sesi[1]->waktu));
-        $this->assertStringStartsWith('https://meet.edulink.test/', $sesi[0]->tautan_meeting);
+        // EduLink generates no meeting link; the tutor shares one later.
+        $this->assertNull($sesi[0]->tautan_meeting);
         $this->assertNull($pesanan->ditahan_hingga);
     }
 
-    public function test_order_finishes_only_when_every_session_is_logged_and_then_frees_the_slot(): void
+    public function test_order_finishes_only_when_every_session_is_confirmed_and_then_frees_the_slot(): void
     {
         $pesanan = $this->pesananDibayar(ubah: ['jumlah_pertemuan' => 2]);
         [$pertama, $kedua] = $pesanan->sesi()->orderBy('waktu')->get();
+        $wali = $pesanan->siswa->wali;
         $this->travelTo($kedua->waktu->copy()->addMinutes(5));
 
+        // Both logged by the tutor: still running until the parent confirms.
         $this->alur()->catatKehadiran($pertama, Kehadiran::Hadir);
+        $this->alur()->catatKehadiran($kedua, Kehadiran::TidakHadir);
         $this->assertSame(StatusPesanan::Dibayar, $pesanan->refresh()->status);
 
-        $this->alur()->catatKehadiran($kedua, Kehadiran::TidakHadir);
+        app(KonfirmasiSesi::class)->konfirmasi($pertama, $wali);
+        $this->assertSame(StatusPesanan::Dibayar, $pesanan->refresh()->status);
+
+        app(KonfirmasiSesi::class)->konfirmasi($kedua, $wali);
         $this->assertSame(StatusPesanan::Selesai, $pesanan->refresh()->status);
         $this->assertSame(StatusJadwal::Tersedia, $pesanan->jadwal()->first()->status);
     }

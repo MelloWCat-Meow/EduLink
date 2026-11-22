@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Percayai reverse proxy (seperti Ngrok) agar header HTTPS dan IP asli terbaca benar
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'peran' => EnsurePeran::class,
             'status-tutor' => EnsureStatusTutor::class,

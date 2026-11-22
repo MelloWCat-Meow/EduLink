@@ -1,5 +1,11 @@
 <?php
 
+/*
+| An empty entry in .env (e.g. "EDULINK_MODE_DEMO=") counts as not set, so
+| the documented default applies instead of an empty string.
+*/
+$isi = fn (string $kunci): mixed => in_array(env($kunci), [null, ''], true) ? null : env($kunci);
+
 return [
 
     /*
@@ -33,10 +39,10 @@ return [
     | such as their subjects and levels.
     */
 
-    'email_admin' => env('EDULINK_EMAIL_ADMIN', 'akademik@edulink.test'),
+    'email_admin' => $isi('EDULINK_EMAIL_ADMIN') ?? 'akademik@edulink.test',
 
-    'email_privasi' => env('EDULINK_EMAIL_PRIVASI', 'privasi@edulink.test'),
+    'email_privasi' => $isi('EDULINK_EMAIL_PRIVASI') ?? 'privasi@edulink.test',
 
-    'mode_demo' => (bool) env('EDULINK_MODE_DEMO', in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)),
+    'mode_demo' => filter_var($isi('EDULINK_MODE_DEMO') ?? in_array(env('APP_ENV', 'production'), ['local', 'testing'], true), FILTER_VALIDATE_BOOL),
 
 ];

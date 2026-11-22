@@ -15,12 +15,16 @@ use Illuminate\Notifications\Notification;
  */
 class Pemberitahuan extends Notification
 {
+    /**
+     * @param  array<string, mixed>  $tambahan
+     */
     public function __construct(
         public JenisNotifikasi $jenis,
         public string $judul,
         public string $pesan,
         public string $tautan,
         public ?Mailable $email = null,
+        public array $tambahan = [],
     ) {}
 
     /**
@@ -41,12 +45,15 @@ class Pemberitahuan extends Notification
             ->subject($this->judul)
             ->greeting('Halo '.$notifiable->nama.',')
             ->line($this->pesan)
-            ->action('Buka di EduLink', $this->tautan)
+            ->action($this->jenis === JenisNotifikasi::SesiDicatat ? 'Konfirmasi atau sanggah' : 'Buka di EduLink', $this->tautan)
             ->salutation('Salam, EduLink Tutor');
     }
 
     /**
-     * @return array{jenis: string, judul: string, pesan: string, tautan: string}
+     * $tambahan carries ids the notification page needs for inline actions,
+     * e.g. id_sesi for the Konfirmasi button of a logged session.
+     *
+     * @return array<string, mixed>
      */
     public function toArray(AkunPengguna $notifiable): array
     {
@@ -55,6 +62,7 @@ class Pemberitahuan extends Notification
             'judul' => $this->judul,
             'pesan' => $this->pesan,
             'tautan' => $this->tautan,
+            ...$this->tambahan,
         ];
     }
 }

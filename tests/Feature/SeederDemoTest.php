@@ -3,17 +3,24 @@
 namespace Tests\Feature;
 
 use App\Enums\Peran;
+use App\Enums\StatusKeluhan;
+use App\Enums\StatusKonfirmasiSesi;
 use App\Enums\StatusPesanan;
 use App\Enums\StatusTutor;
 use App\Enums\StatusVerifikasiTutor;
 use App\Models\AkunPengguna;
 use App\Models\DokumenVerifikasi;
+use App\Models\Keluhan;
+use App\Models\PengembalianDana;
 use App\Models\Pesanan;
 use App\Models\SesiPembelajaran;
 use App\Models\Tutor;
+use App\Services\SaldoTutor;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class SeederDemoTest extends TestCase
@@ -124,5 +131,42 @@ class SeederDemoTest extends TestCase
         foreach (DokumenVerifikasi::query()->pluck('berkas') as $berkas) {
             Storage::disk('local')->assertExists($berkas);
         }
+    }
+
+    /**
+     * The demo uses slots on "yesterday" and "tomorrow", so the seeder must work
+     * whatever day it runs. Every confirmation state is there, and the demo
+     * tutors have money both available and held.
+     */
+    #[TestWith(['2026-11-23 08:00'])]
+    #[TestWith(['2026-11-24 13:00'])]
+    #[TestWith(['2026-11-25 19:00'])]
+    #[TestWith(['2026-11-26 07:30'])]
+    #[TestWith(['2026-11-27 21:00'])]
+    #[TestWith(['2026-11-28 10:00'])]
+    #[TestWith(['2026-11-29 16:00'])]
+    public function test_demo_data_covers_every_session_confirmation_state_on_any_day(string $waktu): void
+    {
+        $this->travelTo(Carbon::parse($waktu));
+        $this->seed(DatabaseSeeder::class);
+
+        $status = SesiPembelajaran::query()->whereNotNull('status_konfirmasi')->distinct()->pluck('status_konfirmasi')->map->value->sort()->values()->all();
+        $this->assertSame(collect(StatusKonfirmasiSesi::cases())->map->value->sort()->values()->all(), $status);
+
+        $menunggu = SesiPembelajaran::query()->where('status_konfirmasi', StatusKonfirmasiSesi::MenungguKonfirmasi)->get();
+        $this->assertTrue($menunggu->contains(fn (SesiPembelajaran $sesi): bool => $sesi->batasKonfirmasi()->isFuture()), 'ada sesi menunggu dengan sisa waktu');
+        $this->assertTrue(Keluhan::query()->whereNotNull('id_sesi')->where('status', StatusKeluhan::Baru)->exists(), 'sanggahan menunggu admin');
+        $this->assertTrue(PengembalianDana::query()->whereHas('sesi', fn ($sesi) => $sesi->where('status_konfirmasi', StatusKonfirmasiSesi::TidakSah))->exists());
+
+        foreach (['rina.marlina@edulink.test', 'andi.pratama@edulink.test', 'dewi.anggraini@edulink.test'] as $kontak) {
+            $saldo = app(SaldoTutor::class)->satu(Tutor::query()->where('kontak', $kontak)->value('id_tutor'));
+            $this->assertSame(1, bccomp($saldo['saldo'], '0', 2), $kontak.' saldo');
+            $this->assertSame(1, bccomp($saldo['ditahan'], '0', 2), $kontak.' ditahan');
+        }
+
+        // The pending payout of the README demo fits Rina's available balance.
+        $rina = Tutor::query()->where('kontak', 'rina.marlina@edulink.test')->sole();
+        $menungguCair = $rina->pencairan()->where('status', 'menunggu')->sole();
+        $this->assertTrue(bccomp((string) $menungguCair->nominal, app(SaldoTutor::class)->satu($rina->id_tutor)['saldo'], 2) <= 0);
     }
 }

@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Enums\Kehadiran;
 use App\Enums\ModeBelajar;
 use App\Enums\StatusJadwal;
-use App\Enums\StatusPengembalian;
+use App\Enums\StatusKonfirmasiSesi;
 use App\Enums\StatusPesanan;
 use App\Exceptions\JadwalTerisi;
 use App\Exceptions\TransisiStatusTidakSah;
@@ -13,7 +13,6 @@ use App\Models\AkunPengguna;
 use App\Models\JadwalKetersediaan;
 use App\Models\MataPelajaran;
 use App\Models\Pengaturan;
-use App\Models\PengembalianDana;
 use App\Models\Pesanan;
 use App\Models\SesiPembelajaran;
 use App\Models\Siswa;
@@ -22,7 +21,6 @@ use App\Support\Format;
 use Closure;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * The one place where an order changes status. Every change runs in a
@@ -36,7 +34,7 @@ class AlurPesanan
      */
     public const MASA_TAHAN_JAM = 24;
 
-    public function __construct(private Pemberitahu $pemberitahu) {}
+    public function __construct(private Pemberitahu $pemberitahu, private PengembalianSesi $pengembalianSesi) {}
 
     /**
      * @param  array{siswa: Siswa, tutor: Tutor, mapel: MataPelajaran, id_jadwal: string, mode: ModeBelajar, durasi: int, tanggal_mulai: Carbon, jumlah_pertemuan: int}  $data
@@ -176,7 +174,7 @@ class AlurPesanan
 
     /**
      * Admins may cancel any order that is not finished yet, with a recorded
-     * reason. A paid order also gets a refund for the sessions not held.
+     * reason. A paid order also gets a refund for the sessions not logged.
      */
     public function batalkanOlehAdmin(Pesanan $pesanan, string $alasan, AkunPengguna $oleh): void
     {
@@ -189,57 +187,19 @@ class AlurPesanan
             $keterangan = 'Alasan: '.$alasan;
 
             if ($sudahDibayar) {
-                $pengembalian = $this->catatPengembalian($pesanan);
-                $keterangan .= ' Dana yang dikembalikan: '.Format::rupiah($pengembalian->nominal).' untuk '.($pesanan->jumlah_pertemuan - $pengembalian->sesi_terlaksana).' sesi yang belum terlaksana.';
-                $this->catatRiwayat($pesanan, 'Pengembalian dana '.Format::rupiah($pengembalian->nominal).' dicatat dan menunggu diproses admin.', $oleh);
+                // Sessions not logged yet go back to the parent. Logged ones keep
+                // going through confirmation; one ruled not valid is refunded then.
+                $belumDicatat = $pesanan->sesi()->whereNull('kehadiran')->get();
+                $pengembalian = $this->pengembalianSesi->kembalikan($pesanan, $belumDicatat);
+
+                if ($pengembalian !== null) {
+                    $keterangan .= ' Dana yang dikembalikan: '.Format::rupiah($pengembalian->nominal).' untuk '.$belumDicatat->count().' sesi yang belum terlaksana.';
+                    $this->catatRiwayat($pesanan, 'Pengembalian dana '.Format::rupiah($pengembalian->nominal).' dicatat dan menunggu diproses admin.', $oleh);
+                }
             }
 
             $this->pemberitahu->pesananDibatalkan($pesanan, 'admin', $keterangan);
         });
-    }
-
-    /**
-     * Refund = total x (sessions not held / meetings), rounded to whole rupiah.
-     * The tutor keeps the sessions already held, so the commission row is
-     * lowered to the same share, at the percentage charged when paid. A
-     * logged session counts as held whether the student came or not.
-     */
-    private function catatPengembalian(Pesanan $pesanan): PengembalianDana
-    {
-        $jumlah = max(1, $pesanan->jumlah_pertemuan);
-        $terlaksana = $pesanan->sesi()->whereNotNull('kehadiran')->count();
-        $belum = $jumlah - $terlaksana;
-
-        $nominal = self::bulatkanRupiah(bcdiv(bcmul((string) $pesanan->total_biaya, (string) $belum, 4), (string) $jumlah, 4));
-
-        $komisi = $pesanan->komisi()->first();
-
-        if ($komisi !== null) {
-            $kotor = bcsub((string) $pesanan->total_biaya, $nominal, 2);
-            $komisi->update([
-                'nominal_sebelum_pengembalian' => $komisi->nominal,
-                'nominal' => self::bulatkanRupiah(bcdiv(bcmul($kotor, (string) $komisi->persentase, 4), '100', 4)),
-            ]);
-        }
-
-        $pengembalian = new PengembalianDana([
-            'id_pesanan' => $pesanan->id_pesanan,
-            'nominal' => $nominal,
-            'sesi_terlaksana' => $terlaksana,
-            'status' => bccomp($nominal, '0', 2) === 0 ? StatusPengembalian::Selesai : StatusPengembalian::PerluDiproses,
-            'catatan' => bccomp($nominal, '0', 2) === 0 ? 'Semua sesi sudah terlaksana, tidak ada dana yang perlu dikembalikan.' : null,
-        ]);
-        $pengembalian->save();
-
-        return $pengembalian;
-    }
-
-    /**
-     * Half up to whole rupiah, kept with two decimals like other amounts.
-     */
-    private static function bulatkanRupiah(string $angka): string
-    {
-        return bcadd(bcadd($angka, '0.5', 0), '0', 2);
     }
 
     /**
@@ -278,10 +238,12 @@ class AlurPesanan
     }
 
     /**
-     * Logs attendance for one session. When every session of the order has
-     * been logged, the order is finished and the weekly slot opens again.
-     * A session can be logged only once it has started; $periksaWaktu is
-     * false only for the local simulation command and test helpers.
+     * The tutor logs a session that took place: held, or held with the student
+     * absent without notice. The parent then has 48 hours to confirm or
+     * dispute it (KonfirmasiSesi). A session can be logged only once it has
+     * started; $periksaWaktu is false only for the demo simulation command
+     * and test helpers. A tutor who could not come does not log the session;
+     * they ask to reschedule it.
      */
     public function catatKehadiran(SesiPembelajaran $sesi, Kehadiran $kehadiran, ?string $catatan = null, bool $periksaWaktu = true, ?AkunPengguna $oleh = null): void
     {
@@ -300,13 +262,34 @@ class AlurPesanan
                 throw new TransisiStatusTidakSah('Kehadiran baru bisa dicatat setelah sesi dimulai ('.Format::waktu($sesi->waktu, true).').');
             }
 
-            $sesi->update(['kehadiran' => $kehadiran, 'catatan' => $catatan ?? $sesi->catatan]);
-            $this->pemberitahu->sesiDicatat($sesi);
+            $sesi->fill(['kehadiran' => $kehadiran, 'catatan' => $catatan ?? $sesi->catatan]);
+            $sesi->forceFill(['status_konfirmasi' => StatusKonfirmasiSesi::MenungguKonfirmasi, 'dicatat_pada' => now()])->save();
 
-            if ($pesanan->sesi()->whereNull('kehadiran')->doesntExist()) {
-                $this->pindah($pesanan, StatusPesanan::Selesai, 'Semua sesi sudah tercatat. Pesanan selesai.');
-                $this->lepasSlot($pesanan);
+            $this->pemberitahu->sesiDicatat($sesi);
+        });
+    }
+
+    /**
+     * Finishes a paid order once every session is settled (confirmed, confirmed
+     * automatically, or ruled not valid), and opens the weekly slot again.
+     */
+    public function selesaikanJikaTuntas(Pesanan $pesanan): bool
+    {
+        return $this->denganKunci($pesanan, function (Pesanan $pesanan): bool {
+            if ($pesanan->status !== StatusPesanan::Dibayar) {
+                return false;
             }
+
+            $belumTuntas = $pesanan->sesi()->get()->contains(fn (SesiPembelajaran $sesi): bool => ! ($sesi->status_konfirmasi?->tuntas() ?? false));
+
+            if ($belumTuntas) {
+                return false;
+            }
+
+            $this->pindah($pesanan, StatusPesanan::Selesai, 'Semua sesi sudah dikonfirmasi. Pesanan selesai.');
+            $this->lepasSlot($pesanan);
+
+            return true;
         });
     }
 
@@ -398,11 +381,9 @@ class AlurPesanan
         $jam = $pesanan->jadwal()->value('jam');
 
         for ($minggu = 0; $minggu < $pesanan->jumlah_pertemuan; $minggu++) {
+            // Online sessions get their meeting link from the tutor (pesanan or sesi tautan_meeting).
             $pesanan->sesi()->create([
                 'waktu' => $pesanan->tanggal_mulai->copy()->addWeeks($minggu)->setTimeFromTimeString($jam),
-                'tautan_meeting' => $pesanan->mode === ModeBelajar::Online
-                    ? 'https://meet.edulink.test/'.Str::lower(Str::random(3).'-'.Str::random(4).'-'.Str::random(3))
-                    : null,
             ]);
         }
     }

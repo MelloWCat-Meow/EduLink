@@ -29,9 +29,10 @@ class RingkasanTest extends TestCase
         $this->travelTo(Carbon::parse('2026-10-30 10:00'));
         $this->pesananDibayar(tutor: $lain);
 
-        // November 3: two orders for $tutor, one paid (Rp400.000, 15% = Rp60.000), one rejected.
+        // November 3: two orders for $tutor, one paid (Rp400.000, 15% = Rp60.000) with
+        // all four sessions confirmed the same day, one rejected.
         $this->travelTo(Carbon::parse('2026-11-03 09:00'));
-        $this->pesananDibayar(tutor: $tutor, ubah: ['id_jadwal' => $jadwal[0]]);
+        $this->catatDanKonfirmasi($this->pesananDibayar(tutor: $tutor, ubah: ['id_jadwal' => $jadwal[0]]));
         app(AlurPesanan::class)->tolak($this->pesananBaru(tutor: $tutor, ubah: ['id_jadwal' => $jadwal[1]]));
 
         // November 10: one order still waiting for the tutor.
@@ -46,10 +47,12 @@ class RingkasanTest extends TestCase
         $r = app(LaporanRingkasan::class)->untuk('2026-11');
 
         $this->assertSame(3, $r['jumlah_pesanan']);
-        $this->assertSame(['menunggu_konfirmasi_tutor' => 1, 'ditolak' => 1, 'menunggu_pembayaran' => 0, 'dibayar' => 1, 'selesai' => 0, 'batal' => 0], $r['jumlah_per_status']);
+        $this->assertSame(['menunggu_konfirmasi_tutor' => 1, 'ditolak' => 1, 'menunggu_pembayaran' => 0, 'dibayar' => 0, 'selesai' => 1, 'batal' => 0], $r['jumlah_per_status']);
         $this->assertSame('400000.00', $r['total_transaksi']);
         $this->assertSame(1, $r['jumlah_transaksi']);
         $this->assertSame('60000.00', $r['pendapatan_komisi']);
+        // October's order has no confirmed session yet: its Rp45.000 commission is held.
+        $this->assertSame('45000.00', $r['komisi_ditahan']);
         $this->assertSame(1, $r['tutor_menunggu_verifikasi']);
         $this->assertSame(1, $r['keluhan_terbuka']);
         $this->assertSame([$tutor->id_tutor => 2], $r['tutor_terlaris']->pluck('jumlah_pesanan', 'id_tutor')->all());
