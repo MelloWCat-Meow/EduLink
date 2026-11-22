@@ -8,6 +8,7 @@ use App\Http\Requests\Tutor\BuatSandiRequest;
 use App\Models\Tutor;
 use App\Services\AktivasiTutor;
 use App\Services\PendaftaranTutor;
+use App\Support\TautanDiLayar;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -35,8 +36,9 @@ class AktivasiController extends Controller
 
         $redirect = redirect()->route('tutor.aktivasi')->with('status', self::PESAN_TERKIRIM);
 
-        // Mode demo only: there is no real inbox, so the link is shown on screen.
-        if ($url !== null && config('edulink.mode_demo')) {
+        // Demo only, and only with EDULINK_TAUTAN_DI_LAYAR on: there is no real
+        // inbox, so the link is shown on screen.
+        if ($url !== null && TautanDiLayar::aktif()) {
             $redirect->with('tautan_demo', $url);
         }
 

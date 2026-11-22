@@ -25,7 +25,7 @@ EduLink Tutor adalah aplikasi web yang mempertemukan orang tua di Kota Jambi den
 | Enum status | 20 |
 | Perintah Artisan | 7 (4 terjadwal) |
 | View Blade | 129 |
-| Test otomatis | 383 test, 2.045 assertion |
+| Test otomatis | 401 test, 2.129 assertion |
 | Baris kode | ±10.700 PHP aplikasi (`app`), ±6.000 Blade, ±770 CSS/JS, ±2.350 database (migration, seeder, factory), ±5.800 test |
 
 ## 2. Pemetaan ke rancangan sistem
@@ -101,24 +101,25 @@ Keterangan: ✅ selesai · 🟡 sebagian atau disimulasikan · ⬜ belum.
 | Pesanan, pembayaran, sesi, saldo (`Feature/Pesanan`) | 80 |
 | Tutor: pendaftaran, verifikasi, dasbor (`Feature/Tutor`) | 66 |
 | Orang tua (`Feature/Ortu`) | 51 |
-| Autentikasi dan kata sandi (`Feature/Auth`) | 44 |
+| Autentikasi dan kata sandi (`Feature/Auth`) | 45 |
 | Admin (`Feature/Admin`) | 39 |
 | Data demo dan `siapkan-demo` | 24 |
 | Notifikasi | 21 |
-| Mode demo | 18 |
+| Mode demo dan tautan di layar | 25 |
+| Pesan validasi berbahasa Indonesia | 10 |
 | Nomor WhatsApp (unit) | 13 |
 | Landing, footer, halaman galat, persetujuan, contoh | 27 |
-| **Total** | **383** |
+| **Total** | **401** |
 
 **Hasil verifikasi teknis** (22 November 2026):
 
 | Pemeriksaan | Hasil |
 |---|---|
-| `php artisan test` | 383 lolos, 0 gagal (2.045 assertion) |
+| `php artisan test` | 401 lolos, 0 gagal (2.129 assertion) |
 | `vendor/bin/pint --test` | Bersih |
 | `npm run build` | Berhasil |
 | `migrate:fresh --seed` | Berhasil |
-| `migrate:rollback` sampai habis, lalu `migrate` | Berhasil pada database kosong (25 migration naik-turun). **Gagal bila tabel berisi data demo**: `2026_11_20_140001` mengembalikan `profil_tutor.tarif` menjadi `NOT NULL`, padahal pendaftar draf belum punya tarif. |
+| `migrate:rollback` sampai habis, lalu `migrate` | Berhasil, juga dengan data demo terisi. (`down()` migration `2026_11_20_140001` kini mengisi `tarif`/`lokasi` yang kosong sebelum kolomnya kembali `NOT NULL`.) |
 | Route | 113 route aplikasi; semua controller, method, dan view yang dirujuk ada |
 | Scheduler | 4 perintah terdaftar: lepas-penahanan (setiap menit), jadwal-ulang-kedaluwarsa (setiap menit), konfirmasi-otomatis (setiap jam), pengingat-sesi (07.00) |
 
@@ -136,15 +137,14 @@ Diurutkan menurut prioritas:
 
 1. **Integrasi payment gateway sungguhan** (mis. Midtrans/Xendit) di belakang kontrak webhook yang sudah ada, plus mode sandbox.
 2. **Penguatan keamanan untuk akses publik:**
-   - tautan reset kata sandi dan aktivasi tidak boleh ditampilkan di layar di luar lingkungan lokal;
-   - `APP_DEBUG=false`;
-   - kata sandi admin yang kuat.
+   - tautan reset kata sandi dan aktivasi sudah hanya tampil di layar kalau `EDULINK_TAUTAN_DI_LAYAR=true` (bawaan mati), dan tautan reset admin tidak pernah ditampilkan; untuk produksi, kirim lewat email sungguhan;
+   - `APP_DEBUG=false` di setiap lingkungan publik;
+   - kata sandi admin yang kuat (akun demo masih memakai kata sandi sederhana).
 3. **Pengiriman email sungguhan** (SMTP/layanan email) dan, bila anggaran ada, WhatsApp Business API untuk pengingat.
 4. **Integrasi EduManage** untuk data pengajar internal dan siswa, lalu SSO antar-aplikasi EduLink.
 5. **Lingkungan staging dan production terpisah,** deploy otomatis, backup database, dan monitoring error.
 6. **Test browser (Dusk)** untuk alur utama, serta pemeriksaan aksesibilitas dengan pembaca layar.
-7. **Migration yang aman untuk rollback** dengan data (lihat hasil verifikasi), atau kebijakan "hanya maju" yang tertulis.
-8. **Analitik lanjutan:** retensi orang tua, tingkat konfirmasi sesi, waktu respons tutor.
+7. **Analitik lanjutan:** retensi orang tua, tingkat konfirmasi sesi, waktu respons tutor.
 
 ## 6. Riwayat pengembangan
 

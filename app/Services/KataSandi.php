@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Peran;
 use App\Models\AkunPengguna;
 use App\Notifications\TautanResetKataSandi;
 use Illuminate\Http\Request;
@@ -22,7 +23,9 @@ class KataSandi
 
     /**
      * Emails a reset link when the email belongs to an account. Returns the
-     * link (for mode demo) or null; the caller answers the same either way.
+     * link the demo may show on screen, or null: always null for an admin
+     * account, so the admin can never be taken over from a public demo URL.
+     * The caller answers the same either way.
      */
     public function kirimTautanReset(string $kontak): ?string
     {
@@ -30,8 +33,9 @@ class KataSandi
         $menit = (int) config('auth.passwords.akun_pengguna.expire', 60);
 
         $status = Password::broker()->sendResetLink(['kontak' => mb_strtolower(trim($kontak))], function (AkunPengguna $akun, string $token) use (&$url, $menit): string {
-            $url = route('password.reset', ['token' => $token, 'kontak' => $akun->kontak]);
-            $akun->notify(new TautanResetKataSandi($url, $menit));
+            $tautan = route('password.reset', ['token' => $token, 'kontak' => $akun->kontak]);
+            $akun->notify(new TautanResetKataSandi($tautan, $menit));
+            $url = $akun->peran === Peran::Admin ? null : $tautan;
 
             return Password::RESET_LINK_SENT;
         });

@@ -15,21 +15,23 @@
         @method('PUT')
         <x-dasbor.koreksi name="slot" id="isian-slot-galat" />
 
-        <table class="mt-2 w-full max-w-[34rem] border-collapse">
-            <thead>
-                <tr class="border-b-2 border-pensil text-left">
-                    <th scope="col" class="w-10 py-2 font-bold">No.</th>
-                    <th scope="col" class="py-2 font-bold">Hari</th>
-                    <th scope="col" class="py-2 font-bold">Jam mulai</th>
-                    <th scope="col" class="w-12 py-2"><span class="sr-only">Hapus</span></th>
-                </tr>
-            </thead>
-            <tbody data-baris-induk>
-                @foreach ($baris as $i => $slot)
-                    @include('tutor.pendaftaran._baris-jadwal', ['i' => $i, 'slot' => $slot])
-                @endforeach
-            </tbody>
-        </table>
+        <div class="mt-2 max-w-[34rem] overflow-x-auto">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="border-b-2 border-pensil text-left">
+                        <th scope="col" class="w-10 py-2 font-bold">No.</th>
+                        <th scope="col" class="py-2 font-bold">Hari</th>
+                        <th scope="col" class="py-2 font-bold">Jam mulai</th>
+                        <th scope="col" class="w-12 py-2"><span class="sr-only">Hapus</span></th>
+                    </tr>
+                </thead>
+                <tbody data-baris-induk>
+                    @foreach ($baris as $i => $slot)
+                        @include('tutor.pendaftaran._baris-jadwal', ['i' => $i, 'slot' => $slot])
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
         <template data-templat-baris>
             @include('tutor.pendaftaran._baris-jadwal', ['i' => '__I__', 'slot' => ['hari' => '', 'jam' => '']])

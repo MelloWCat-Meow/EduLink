@@ -33,29 +33,31 @@
         </p>
 
         <div class="mt-10 bg-white p-4 shadow-[0_1px_0_rgb(0_0_0/0.04),0_20px_36px_-30px_rgb(37_37_43/0.6)] sm:p-8">
-            <table class="w-full border-collapse text-left">
-                <caption class="sr-only">Perbandingan belajar online dan tutor datang ke rumah</caption>
-                <thead class="hidden md:table-header-group">
-                    <tr class="border-b-2 border-pensil">
-                        <td class="w-[22%] pb-3"></td>
-                        <th scope="col" class="pb-3 font-display text-[1.6rem] font-extrabold [font-stretch:88%]"><span class="stabilo">Online</span></th>
-                        <th scope="col" class="pb-3 pl-6 font-display text-[1.6rem] font-extrabold [font-stretch:88%]"><span class="stabilo">Ke rumah</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($rows as $row)
-                        <tr class="block border-b border-dashed border-pensil-muda py-4 last:border-0 md:table-row md:py-0">
-                            <th scope="row" class="block pb-2 font-tangan text-[1.3rem] leading-snug font-normal text-tinta md:table-cell md:py-5 md:pr-6 md:align-top">{{ $row['aspect'] }}</th>
-                            <td class="block py-1 leading-[1.65] md:table-cell md:py-5 md:align-top">
-                                <span class="font-bold md:hidden">Online: </span>{{ $row['online'] }}
-                            </td>
-                            <td class="block py-1 leading-[1.65] md:table-cell md:border-l md:border-dashed md:border-pensil-muda md:py-5 md:pl-6 md:align-top">
-                                <span class="font-bold md:hidden">Ke rumah: </span>{{ $row['home'] }}
-                            </td>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                    <caption class="sr-only">Perbandingan belajar online dan tutor datang ke rumah</caption>
+                    <thead class="hidden md:table-header-group">
+                        <tr class="border-b-2 border-pensil">
+                            <td class="w-[22%] pb-3"></td>
+                            <th scope="col" class="pb-3 font-display text-[1.6rem] font-extrabold [font-stretch:88%]"><span class="stabilo">Online</span></th>
+                            <th scope="col" class="pb-3 pl-6 font-display text-[1.6rem] font-extrabold [font-stretch:88%]"><span class="stabilo">Ke rumah</span></th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach ($rows as $row)
+                            <tr class="block border-b border-dashed border-pensil-muda py-4 last:border-0 md:table-row md:py-0">
+                                <th scope="row" class="block pb-2 font-tangan text-[1.3rem] leading-snug font-normal text-tinta md:table-cell md:py-5 md:pr-6 md:align-top">{{ $row['aspect'] }}</th>
+                                <td class="block py-1 leading-[1.65] md:table-cell md:py-5 md:align-top">
+                                    <span class="font-bold md:hidden">Online: </span>{{ $row['online'] }}
+                                </td>
+                                <td class="block py-1 leading-[1.65] md:table-cell md:border-l md:border-dashed md:border-pensil-muda md:py-5 md:pl-6 md:align-top">
+                                    <span class="font-bold md:hidden">Ke rumah: </span>{{ $row['home'] }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </section>

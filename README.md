@@ -68,7 +68,27 @@ Test selalu berjalan dengan mode demo aktif (diatur di `phpunit.xml`), apa pun i
 Selama mode demo aktif:
 
 - Tombol **Bayar** membuka halaman gateway tiruan dengan pilihan Berhasil atau Gagal. Hasilnya dikirim ke `POST /webhooks/payment` dengan tanda tangan HMAC.
-- Tautan aktivasi tutor internal dan tautan reset kata sandi juga ditampilkan di layar dengan label "Mode demo", karena tidak ada kotak masuk sungguhan.
+- Tautan aktivasi tutor internal dan tautan reset kata sandi selalu "dikirim" lewat mailer `log`. Kalau `EDULINK_TAUTAN_DI_LAYAR=true`, tautan itu juga ditampilkan di layar dengan label "Mode demo", kecuali tautan reset akun admin, yang tidak pernah ditampilkan. Flag ini mati secara bawaan; nyalakan hanya saat demo di `localhost`.
+
+### Mengambil tautan dari log email
+
+Kalau tautan tidak ditampilkan di layar (flag mati, atau akun admin), ambil dari log setelah menekan tombol kirim:
+
+```bash
+# Tautan reset kata sandi terakhir
+grep -oE 'https?://[^"<> ]*/lupa-kata-sandi/[^"<> ]*' storage/logs/laravel.log | tail -1 | sed 's/&amp;/\&/g'
+
+# Tautan aktivasi tutor internal terakhir
+grep -oE 'https?://[^"<> ]*/aktivasi-tutor/[^"<> ]*' storage/logs/laravel.log | tail -1 | sed 's/&amp;/\&/g'
+```
+
+Di Windows (PowerShell):
+
+```powershell
+(Select-String -Path storage\logs\laravel.log -Pattern 'https?://[^"<> ]*/aktivasi-tutor/[^"<> ]*' -AllMatches).Matches.Value | Select-Object -Last 1 | ForEach-Object { $_ -replace '&amp;', '&' }
+```
+
+Ganti `aktivasi-tutor` dengan `lupa-kata-sandi` untuk tautan reset. Buka tautannya lewat alamat yang sama dengan `APP_URL` (tautan aktivasi ditandatangani untuk alamat itu).
 - Perintah `edulink:simulasi-tutor` dan `edulink:simulasi-sesi` tersedia untuk demo cepat.
 
 ## Menyiapkan presentasi
@@ -86,7 +106,9 @@ Naskah demo langkah demi langkah ada di [docs/skenario-presentasi.md](docs/skena
 ### Presentasi lewat ngrok
 
 1. Jalankan `php artisan serve`, lalu `ngrok http 8000`.
-2. Di `.env`, isi `APP_URL` dengan alamat `https://....ngrok-free.app` dari ngrok, dan `EDULINK_MODE_DEMO=true`. Alamat ngrok gratis berubah setiap kali ngrok dijalankan ulang, jadi perbarui `APP_URL` setiap kali.
+2. Di `.env`, isi `APP_URL` dengan alamat `https://....ngrok-free.app` dari ngrok, `EDULINK_MODE_DEMO=true`, `EDULINK_TAUTAN_DI_LAYAR=false`, dan `APP_DEBUG=false`. Alamat ngrok gratis berubah setiap kali ngrok dijalankan ulang, jadi perbarui `APP_URL` setiap kali.
+   - `EDULINK_TAUTAN_DI_LAYAR=false`: alamat ngrok bisa dibuka siapa saja, dan tautan reset di layar memungkinkan orang lain mengambil alih akun demo. Ambil tautan aktivasi atau reset dari log saat dibutuhkan (lihat "Mengambil tautan dari log email").
+   - `APP_DEBUG=false`: kalau terjadi galat, pengunjung melihat halaman galat biasa, bukan stack trace dan potongan kode.
 3. Jalankan `npm run build`, **bukan** `npm run dev`. Selama dev server Vite berjalan, CSS dan JS diambil dari `localhost:5173`, yang tidak bisa dibuka dari perangkat lain, sehingga halaman tampil tanpa gaya.
 4. Jalankan `php artisan optimize:clear` (atau `edulink:siapkan-demo`) supaya perubahan `.env` terbaca.
 
@@ -142,7 +164,7 @@ Semua sesi yang menunggu konfirmasi langsung dikonfirmasi otomatis, dan kedua pi
 Alur pendaftaran tutor:
 
 - **Eksternal:** daftar di `/daftar-tutor`, isi lima langkah, kirim, lalu admin menyetujui di **Verifikasi tutor**. Tutor itu kemudian tampil di `/tutor`.
-- **Internal:** buka `/aktivasi-tutor` dengan `lestari.putri@edulink.test`, buka tautan "Mode demo", buat kata sandi, lengkapi tarif, kecamatan, dan jadwal, lalu kirim. Admin kemudian menyetujuinya.
+- **Internal:** buka `/aktivasi-tutor` dengan `lestari.putri@edulink.test`, lalu buka tautan aktivasinya (di layar kalau `EDULINK_TAUTAN_DI_LAYAR=true`, atau dari log email), buat kata sandi, lengkapi tarif, kecamatan, dan jadwal, lalu kirim. Admin kemudian menyetujuinya.
 
 ## Test
 
