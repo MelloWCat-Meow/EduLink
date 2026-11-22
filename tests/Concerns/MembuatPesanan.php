@@ -11,6 +11,7 @@ use App\Models\Pesanan;
 use App\Models\Siswa;
 use App\Models\Tutor;
 use App\Services\AlurPesanan;
+use App\Services\KonfirmasiSesi;
 use App\Services\PemrosesPembayaran;
 
 /**
@@ -76,10 +77,25 @@ trait MembuatPesanan
     {
         $pesanan = $this->pesananDibayar($siswa, $tutor, ['jumlah_pertemuan' => 1, ...$ubah]);
 
-        foreach ($pesanan->sesi()->get() as $sesi) {
-            app(AlurPesanan::class)->catatKehadiran($sesi, Kehadiran::Hadir, periksaWaktu: false);
-        }
+        $this->catatDanKonfirmasi($pesanan);
 
         return $pesanan->refresh();
+    }
+
+    /**
+     * Logs sessions of a paid order (ignoring their start time) and has the
+     * parent confirm them; with $jumlah, only the first $jumlah sessions.
+     */
+    protected function catatDanKonfirmasi(Pesanan $pesanan, ?int $jumlah = null, bool $konfirmasi = true): void
+    {
+        $wali = $pesanan->siswa()->firstOrFail()->wali()->firstOrFail();
+
+        foreach ($pesanan->sesi()->whereNull('kehadiran')->orderBy('waktu')->take($jumlah ?? PHP_INT_MAX)->get() as $sesi) {
+            app(AlurPesanan::class)->catatKehadiran($sesi, Kehadiran::Hadir, periksaWaktu: false);
+
+            if ($konfirmasi) {
+                app(KonfirmasiSesi::class)->konfirmasi($sesi, $wali);
+            }
+        }
     }
 }

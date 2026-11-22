@@ -4,15 +4,20 @@ namespace Tests\Feature;
 
 use App\Enums\Peran;
 use App\Enums\StatusJadwal;
+use App\Enums\StatusKeluhan;
+use App\Enums\StatusKonfirmasiSesi;
 use App\Enums\StatusPesanan;
 use App\Enums\StatusTutor;
 use App\Enums\StatusVerifikasiTutor;
 use App\Models\AkunPengguna;
 use App\Models\DokumenVerifikasi;
 use App\Models\JadwalKetersediaan;
+use App\Models\Keluhan;
+use App\Models\PengembalianDana;
 use App\Models\Pesanan;
 use App\Models\SesiPembelajaran;
 use App\Models\Tutor;
+use App\Services\SaldoTutor;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -131,6 +136,47 @@ class SeederDemoTest extends TestCase
     }
 
     /**
+     * The demo uses slots on "yesterday" and "tomorrow", so the seeder must work
+     * whatever day it runs. Every confirmation state is there, and the demo
+     * tutors have money both available and held.
+     */
+    #[TestWith(['2026-11-23 08:00'])]
+    #[TestWith(['2026-11-24 13:00'])]
+    #[TestWith(['2026-11-25 19:00'])]
+    #[TestWith(['2026-11-26 07:30'])]
+    #[TestWith(['2026-11-27 21:00'])]
+    #[TestWith(['2026-11-28 10:00'])]
+    #[TestWith(['2026-11-29 16:00'])]
+    public function test_demo_data_covers_every_session_confirmation_state_on_any_day(string $waktu): void
+    {
+        $this->travelTo(Carbon::parse($waktu));
+        $this->seed(DatabaseSeeder::class);
+
+        $status = SesiPembelajaran::query()->whereNotNull('status_konfirmasi')->distinct()->pluck('status_konfirmasi')->map->value->sort()->values()->all();
+        $this->assertSame(collect(StatusKonfirmasiSesi::cases())->map->value->sort()->values()->all(), $status);
+
+        $menunggu = SesiPembelajaran::query()->where('status_konfirmasi', StatusKonfirmasiSesi::MenungguKonfirmasi)->get();
+        $this->assertTrue($menunggu->contains(fn (SesiPembelajaran $sesi): bool => $sesi->batasKonfirmasi()->isFuture()), 'ada sesi menunggu dengan sisa waktu');
+        $this->assertTrue(Keluhan::query()->whereNotNull('id_sesi')->where('status', StatusKeluhan::Baru)->exists(), 'sanggahan menunggu admin');
+        $this->assertTrue(PengembalianDana::query()->whereHas('sesi', fn ($sesi) => $sesi->where('status_konfirmasi', StatusKonfirmasiSesi::TidakSah))->exists());
+
+        foreach (['rina.marlina@edulink.test', 'andi.pratama@edulink.test', 'dewi.anggraini@edulink.test'] as $kontak) {
+            $saldo = app(SaldoTutor::class)->satu(Tutor::query()->where('kontak', $kontak)->value('id_tutor'));
+            $this->assertSame(1, bccomp($saldo['saldo'], '0', 2), $kontak.' saldo');
+            $this->assertSame(1, bccomp($saldo['ditahan'], '0', 2), $kontak.' ditahan');
+        }
+
+        // The admin has a payout to approve, and it fits that tutor's available balance.
+        $yusuf = Tutor::query()->where('kontak', 'yusuf.hidayat@edulink.test')->sole();
+        $menungguCair = $yusuf->pencairan()->where('status', 'menunggu')->sole();
+        $this->assertTrue(bccomp((string) $menungguCair->nominal, app(SaldoTutor::class)->satu($yusuf->id_tutor)['saldo'], 2) <= 0);
+
+        // Rina has nothing waiting, so she can ask for a payout during the presentation.
+        $rina = Tutor::query()->where('kontak', 'rina.marlina@edulink.test')->sole();
+        $this->assertFalse($rina->pencairan()->where('status', 'menunggu')->exists());
+    }
+
+    /**
      * Dewi's "tomorrow" slot shares a weekday with one of her fixed slots on
      * some days (on a Sunday it is Monday). The seeder must still pick free
      * slots only, whatever day it runs, and never put two active orders on one slot.
@@ -142,6 +188,7 @@ class SeederDemoTest extends TestCase
     #[TestWith(['2026-11-27 21:00'])]
     #[TestWith(['2026-11-28 10:00'])]
     #[TestWith(['2026-11-29 16:00'])]
+    #[TestWith(['2026-11-24 23:30'])]
     public function test_the_seeder_runs_on_any_day_and_keeps_slots_consistent(string $waktu): void
     {
         $this->travelTo(Carbon::parse($waktu));
@@ -160,5 +207,12 @@ class SeederDemoTest extends TestCase
             $pesanan = $aktif->firstWhere('id_jadwal', $slot->id_jadwal);
             $this->assertSame($pesanan ? $statusSlot[$pesanan->status->value] : StatusJadwal::Tersedia, $slot->status, 'slot '.$slot->id_jadwal);
         }
+
+        // What the presentation needs on the day, relative to when the seeder ran.
+        $sesiHariIni = SesiPembelajaran::query()->whereNull('kehadiran')->where('waktu', '>', now())->where('waktu', '<=', now()->endOfDay())->exists();
+        $this->assertSame(now()->hour < 23, $sesiHariIni, 'sesi hari ini (dilewati setelah pukul 23.00)');
+        $this->assertTrue(Pesanan::query()->where('status', StatusPesanan::MenungguPembayaran)->where('ditahan_hingga', '>', now())->exists(), 'tagihan dengan sisa waktu');
+        $this->assertTrue(SesiPembelajaran::query()->where('status_konfirmasi', StatusKonfirmasiSesi::MenungguKonfirmasi)->get()
+            ->contains(fn (SesiPembelajaran $sesi): bool => $sesi->batasKonfirmasi()->isFuture()), 'sesi menunggu konfirmasi');
     }
 }

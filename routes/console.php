@@ -10,3 +10,6 @@ Schedule::command('edulink:pengingat-sesi')->dailyAt('07:00')->withoutOverlappin
 
 // Reschedule requests nobody answered before the old session time: the session stays put.
 Schedule::command('edulink:jadwal-ulang-kedaluwarsa')->everyMinute()->withoutOverlapping();
+
+// Sessions the parent did not confirm or dispute within 48 hours of logging are confirmed automatically.
+Schedule::command('edulink:konfirmasi-otomatis')->hourly()->withoutOverlapping();

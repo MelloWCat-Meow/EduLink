@@ -6,16 +6,16 @@ use App\Enums\StatusPengembalian;
 use App\Models\Concerns\HasPrefixedKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
  * Refund for the sessions of a cancelled paid order that did not take place.
- * Written only by App\Services\AlurPesanan and App\Services\PengembalianDanaLayanan.
+ * Written only by App\Services\PengembalianSesi and App\Services\ProsesPengembalian.
  *
  * @property string $id_pengembalian
  * @property string $id_pesanan
  * @property string $nominal
- * @property int $sesi_terlaksana
  * @property StatusPengembalian $status
  * @property string|null $catatan
  * @property string|null $diproses_oleh
@@ -50,7 +50,6 @@ class PengembalianDana extends Model
     {
         return [
             'nominal' => 'decimal:2',
-            'sesi_terlaksana' => 'integer',
             'status' => StatusPengembalian::class,
             'diproses_pada' => 'datetime',
         ];
@@ -62,6 +61,16 @@ class PengembalianDana extends Model
     public function pesanan(): BelongsTo
     {
         return $this->belongsTo(Pesanan::class, 'id_pesanan', 'id_pesanan');
+    }
+
+    /**
+     * The sessions this refund pays back.
+     *
+     * @return HasMany<SesiPembelajaran, $this>
+     */
+    public function sesi(): HasMany
+    {
+        return $this->hasMany(SesiPembelajaran::class, 'id_pengembalian', 'id_pengembalian');
     }
 
     /**

@@ -28,6 +28,9 @@ enum JenisNotifikasi: string
     case JadwalUlangDijawab = 'jadwal_ulang_dijawab';
     case PengembalianDana = 'pengembalian_dana';
     case MapelDiubah = 'mapel_diubah';
+    case SesiDikonfirmasi = 'sesi_dikonfirmasi';
+    case SesiDisanggah = 'sesi_disanggah';
+    case SanggahanDiputuskan = 'sanggahan_diputuskan';
 
     public function pakaiEmail(): bool
     {
@@ -44,6 +47,9 @@ enum JenisNotifikasi: string
             self::KataSandiDiubah,
             self::JadwalUlangDiajukan,
             self::PengembalianDana,
+            self::SesiDicatat,
+            self::SesiDisanggah,
+            self::SanggahanDiputuskan,
         ], true);
     }
 }

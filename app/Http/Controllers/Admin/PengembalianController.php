@@ -19,6 +19,7 @@ class PengembalianController extends Controller
         $daftar = PengembalianDana::query()
             ->when($status, fn ($query) => $query->where('status', $status))
             ->with(['pesanan.siswa.wali', 'pesanan.tutor', 'pesanan.mapel', 'pemroses'])
+            ->withCount('sesi')
             ->orderByRaw("CASE status WHEN 'perlu_diproses' THEN 0 ELSE 1 END")
             ->latest()
             ->paginate(15)

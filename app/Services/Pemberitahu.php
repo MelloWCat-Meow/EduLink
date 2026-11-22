@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\JenisNotifikasi;
+use App\Enums\ModeBelajar;
 use App\Enums\Peran;
 use App\Enums\StatusJadwalUlang;
 use App\Enums\StatusPencairan;
@@ -133,16 +134,75 @@ class Pemberitahu
         ));
     }
 
+    /**
+     * Asks the parent to confirm or dispute; silence confirms it after 48 hours.
+     */
     public function sesiDicatat(SesiPembelajaran $sesi): void
     {
         $pesanan = $this->muat($sesi->pesanan()->firstOrFail());
-        $catatan = filled($sesi->catatan) ? ' Catatan tutor: '.$sesi->catatan : '';
+        $catatan = filled($sesi->catatan) ? ' Catatan tutor: '.$sesi->catatan.'.' : '';
 
         $this->kirim($this->wali($pesanan), new Pemberitahuan(
             JenisNotifikasi::SesiDicatat,
-            'Sesi '.Format::tanggalPendek($sesi->waktu).' sudah dicatat',
-            "{$pesanan->tutor->nama} mencatat {$pesanan->siswa->nama}: {$sesi->kehadiran->label()}.{$catatan}",
-            route('pesanan.show', $pesanan),
+            'Konfirmasi sesi '.Format::tanggalPendek($sesi->waktu),
+            "{$pesanan->tutor->nama} mencatat sesi {$pesanan->siswa->nama}: {$sesi->kehadiran->label()}.{$catatan} Konfirmasi kalau sesuai, atau sanggah dengan alasan, sebelum ".Format::waktu($sesi->batasKonfirmasi()).'. Tanpa jawaban, sesi dianggap terkonfirmasi.',
+            route('pesanan.show', $pesanan).'#sesi-'.$sesi->id_sesi,
+            tambahan: ['id_sesi' => $sesi->id_sesi],
+        ));
+    }
+
+    public function sesiDikonfirmasi(SesiPembelajaran $sesi, Pesanan $pesanan, bool $otomatis): void
+    {
+        $pesanan = $this->muat($pesanan);
+        $kapan = Format::waktu($sesi->waktu);
+
+        $this->kirim($this->akunTutor($pesanan), new Pemberitahuan(
+            JenisNotifikasi::SesiDikonfirmasi,
+            $otomatis ? 'Sesi dikonfirmasi otomatis' : 'Sesi dikonfirmasi orang tua',
+            "Sesi {$kapan} ({$pesanan->siswa->nama}, pesanan {$pesanan->id_pesanan}) ".($otomatis ? 'dikonfirmasi otomatis karena tidak dijawab dalam 48 jam' : 'dikonfirmasi orang tua').'. Bagian Anda untuk sesi ini masuk ke saldo tersedia.',
+            route('tutor.pendapatan.index'),
+        ));
+
+        if ($otomatis) {
+            $this->kirim($this->wali($pesanan), new Pemberitahuan(
+                JenisNotifikasi::SesiDikonfirmasi,
+                'Sesi dikonfirmasi otomatis',
+                "Sesi {$kapan} dengan {$pesanan->tutor->nama} dikonfirmasi otomatis karena tidak dijawab dalam 48 jam.",
+                route('pesanan.show', $pesanan).'#sesi-'.$sesi->id_sesi,
+            ));
+        }
+    }
+
+    public function sesiDisanggah(SesiPembelajaran $sesi, Pesanan $pesanan, Keluhan $keluhan): void
+    {
+        $pesanan = $this->muat($pesanan);
+        $isi = "Wali {$pesanan->siswa->nama} menyanggah sesi ".Format::waktu($sesi->waktu)." pesanan {$pesanan->id_pesanan}. Alasan: {$sesi->alasan_sanggahan}";
+
+        $this->kirim($this->admin(), new Pemberitahuan(JenisNotifikasi::SesiDisanggah, 'Sanggahan sesi perlu diputuskan', $isi, route('admin.keluhan.show', $keluhan)));
+        $this->kirim($this->akunTutor($pesanan), new Pemberitahuan(
+            JenisNotifikasi::SesiDisanggah,
+            'Sesi Anda disanggah orang tua',
+            $isi.' Admin akan memutuskan; bagian Anda untuk sesi ini ditahan sampai ada keputusan.',
+            route('tutor.pesanan.show', $pesanan),
+        ));
+    }
+
+    public function sanggahanDiputuskan(SesiPembelajaran $sesi, Pesanan $pesanan, bool $sah): void
+    {
+        $pesanan = $this->muat($pesanan);
+        $judul = $sah ? 'Sanggahan diputuskan: sesi sah' : 'Sanggahan diputuskan: sesi tidak sah';
+
+        $this->kirim($this->wali($pesanan), new Pemberitahuan(
+            JenisNotifikasi::SanggahanDiputuskan,
+            $judul,
+            $sesi->keputusan_admin.($sah ? '' : ' Biaya sesi ini dikembalikan kepada Anda.'),
+            route('pesanan.show', $pesanan).'#sesi-'.$sesi->id_sesi,
+        ));
+        $this->kirim($this->akunTutor($pesanan), new Pemberitahuan(
+            JenisNotifikasi::SanggahanDiputuskan,
+            $judul,
+            $sesi->keputusan_admin.($sah ? ' Bagian Anda untuk sesi ini masuk ke saldo tersedia.' : ' Anda tidak menerima pendapatan untuk sesi ini.'),
+            route('tutor.pesanan.show', $pesanan),
         ));
     }
 
@@ -150,19 +210,22 @@ class Pemberitahu
     {
         $pesanan = $this->muat($sesi->pesanan()->firstOrFail());
         $kapan = 'besok, '.Format::waktu($sesi->waktu, true);
-        $tempat = $sesi->tautan_meeting ? ' Ruang meeting: '.$sesi->tautan_meeting : ' Kunjungan rumah.';
+        $tautan = $sesi->tautanBerlaku($pesanan);
+        $online = $pesanan->mode === ModeBelajar::Online;
+        $tempatOrtu = ! $online ? ' Kunjungan rumah.' : ($tautan ? ' Ruang meeting: '.$tautan : ' Tutor belum membagikan tautan meeting.');
+        $tempatTutor = ! $online ? ' Kunjungan rumah.' : ($tautan ? ' Ruang meeting: '.$tautan : ' Tautan meeting sesi ini belum diisi. Bagikan dari detail pesanan sebelum sesi dimulai.');
 
         $this->kirim($this->wali($pesanan), new Pemberitahuan(
             JenisNotifikasi::PengingatSesi,
             'Pengingat: sesi les besok',
-            "{$pesanan->mapel->label()} untuk {$pesanan->siswa->nama} dengan {$pesanan->tutor->nama} {$kapan}.{$tempat}",
+            "{$pesanan->mapel->label()} untuk {$pesanan->siswa->nama} dengan {$pesanan->tutor->nama} {$kapan}.{$tempatOrtu}",
             route('pesanan.show', $pesanan),
         ));
 
         $this->kirim($this->akunTutor($pesanan), new Pemberitahuan(
             JenisNotifikasi::PengingatSesi,
             'Pengingat: Anda mengajar besok',
-            "{$pesanan->mapel->label()} untuk {$pesanan->siswa->nama} {$kapan}.{$tempat}",
+            "{$pesanan->mapel->label()} untuk {$pesanan->siswa->nama} {$kapan}.{$tempatTutor}",
             route('tutor.pesanan.show', $pesanan),
         ));
     }

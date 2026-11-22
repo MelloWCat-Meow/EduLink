@@ -119,6 +119,7 @@
                     <span>&copy; {{ date('Y') }} PT EduLink Teknologi Indonesia</span>
                     <a href="{{ route('syarat') }}" class="inline-flex min-h-11 items-center underline underline-offset-4">Syarat dan ketentuan</a>
                     <a href="{{ route('privacy') }}" class="inline-flex min-h-11 items-center underline underline-offset-4">Kebijakan privasi</a>
+                    <span class="inline-flex min-h-11 items-center sm:ml-auto">EduLink Tutor {{ config('edulink.versi') }}</span>
                 </footer>
             </div>
         </main>

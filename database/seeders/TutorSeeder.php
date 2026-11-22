@@ -175,6 +175,7 @@ class TutorSeeder extends Seeder
             'rina.marlina@edulink.test' => ['BRI', '0123456789014417', 'Rina Marlina'],
             'andi.pratama@edulink.test' => ['BNI', '0987654321', 'Andi Pratama'],
             'dewi.anggraini@edulink.test' => ['Bank Jambi', '2001300456', 'Dewi Anggraini'],
+            'yusuf.hidayat@edulink.test' => ['BSI', '7001234567', 'Yusuf Hidayat'],
         ];
 
         foreach ($rekening as $kontak => [$bank, $nomor, $atasNama]) {

@@ -32,7 +32,7 @@
                                 · {{ $pesanan->mapel->label() }} · tutor {{ $pesanan->tutor->nama }}
                             </p>
                             <p class="text-[0.9375rem]">Untuk {{ $pesanan->siswa->wali->nama }} ({{ $pesanan->siswa->wali->kontak }}{{ $pesanan->siswa->wali->no_hp ? ', '.$pesanan->siswa->wali->no_hp : '' }})</p>
-                            <p class="text-[0.875rem] text-pensil-muda">{{ Format::rupiah($pesanan->total_biaya) }} × {{ $pesanan->jumlah_pertemuan - $pengembalian->sesi_terlaksana }} dari {{ $pesanan->jumlah_pertemuan }} sesi belum terlaksana</p>
+                            <p class="text-[0.875rem] text-pensil-muda">{{ $pengembalian->sesi_count }} dari {{ $pesanan->jumlah_pertemuan }} sesi dikembalikan (tidak terlaksana atau tidak sah)</p>
                             @if ($pengembalian->status === StatusPengembalian::Selesai)
                                 <p class="mt-1 text-[0.9375rem]"><span class="font-bold">Catatan:</span> {{ $pengembalian->catatan }}@if ($pengembalian->pemroses) · {{ $pengembalian->pemroses->nama }}, {{ Format::waktu($pengembalian->diproses_pada) }}@endif</p>
                             @endif

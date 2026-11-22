@@ -4,18 +4,26 @@
 @php($adaMenunggu = $riwayatPencairan->contains('status', StatusPencairan::Menunggu))
 
 <x-dasbor.layout title="Pendapatan">
-    <x-dasbor.judul title="Pendapatan dan pencairan" note="saldo = pembayaran berhasil − pengembalian dana − komisi − pencairan yang disetujui atau dibayar" />
+    <x-dasbor.judul title="Pendapatan dan pencairan" note="bagian Anda dari setiap sesi cair setelah orang tua mengonfirmasi sesi itu" />
 
     <div class="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
         <div class="space-y-8">
-            <x-dasbor.panel heading="Saldo tersedia">
-                <p class="angka font-display text-[2.2rem] font-extrabold">{{ Format::rupiah($saldo['saldo']) }}</p>
-                <dl class="mt-3 grid gap-x-6 gap-y-1 text-[0.9375rem] sm:grid-cols-3">
-                    <div><dt class="text-pensil-muda">Pembayaran masuk (setelah pengembalian)</dt><dd class="angka font-bold">{{ Format::rupiah($saldo['pendapatan']) }}</dd></div>
-                    <div><dt class="text-pensil-muda">Komisi EduLink</dt><dd class="angka font-bold">− {{ Format::rupiah($saldo['komisi']) }}</dd></div>
-                    <div><dt class="text-pensil-muda">Sudah dicairkan</dt><dd class="angka font-bold">− {{ Format::rupiah($saldo['dicairkan']) }}</dd></div>
-                </dl>
-            </x-dasbor.panel>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-dasbor.panel heading="Saldo tersedia">
+                    <p class="angka font-display text-[2.2rem] leading-none font-extrabold">{{ Format::rupiah($saldo['saldo']) }}</p>
+                    <p class="mt-2 text-[0.9375rem] text-pensil-muda">Bisa diajukan untuk dicairkan.</p>
+                    <dl class="mt-3 space-y-1 text-[0.9375rem]">
+                        <div class="flex justify-between gap-3"><dt class="text-pensil-muda">Nilai sesi dikonfirmasi</dt><dd class="angka font-bold">{{ Format::rupiah($saldo['pendapatan']) }}</dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-pensil-muda">Komisi EduLink</dt><dd class="angka font-bold">− {{ Format::rupiah($saldo['komisi']) }}</dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-pensil-muda">Sudah dicairkan</dt><dd class="angka font-bold">− {{ Format::rupiah($saldo['dicairkan']) }}</dd></div>
+                    </dl>
+                </x-dasbor.panel>
+                <x-dasbor.panel heading="Dana ditahan">
+                    <p class="angka font-display text-[2.2rem] leading-none font-extrabold">{{ Format::rupiah($saldo['ditahan']) }}</p>
+                    <p class="mt-2 text-[0.9375rem]">Bagian Anda dari sesi yang belum dikonfirmasi: belum terlaksana, menunggu konfirmasi orang tua, atau sedang disanggah.</p>
+                    <p class="mt-2 text-[0.9375rem] text-pensil-muda">Cair per sesi saat orang tua mengonfirmasi, otomatis {{ \App\Services\KonfirmasiSesi::BATAS_JAM }} jam setelah Anda mencatat sesi bila tidak dijawab, atau saat admin menyatakan sanggahan sah.</p>
+                </x-dasbor.panel>
+            </div>
 
             <x-dasbor.panel heading="Rincian per pesanan">
                 @if ($rincian->isEmpty())
@@ -23,20 +31,26 @@
                 @else
                     <div class="overflow-x-auto">
                         <table class="tabel">
-                            <thead><tr><th scope="col">Pesanan</th><th scope="col" class="text-right">Total</th><th scope="col" class="text-right">Dikembalikan</th><th scope="col" class="text-right">Komisi</th><th scope="col" class="text-right">Bersih</th></tr></thead>
+                            <thead><tr><th scope="col">Pesanan</th><th scope="col">Sesi</th><th scope="col" class="text-right">Total</th><th scope="col" class="text-right">Tersedia</th><th scope="col" class="text-right">Ditahan</th></tr></thead>
                             <tbody>
                                 @foreach ($rincian as $baris)
                                     <tr>
                                         <td><a href="{{ route('tutor.pesanan.show', $baris['pesanan']) }}" class="tautan angka">{{ $baris['pesanan']->id_pesanan }}</a><span class="block text-[0.8125rem] text-pensil-muda">{{ $baris['pesanan']->mapel->label() }} · {{ $baris['pesanan']->siswa->nama }} · {{ $baris['pesanan']->status->label() }}</span></td>
+                                        <td class="text-[0.875rem]">
+                                            <span class="block whitespace-nowrap">{{ $baris['sesi_tersedia'] }} dikonfirmasi</span>
+                                            <span class="block whitespace-nowrap">{{ $baris['sesi_ditahan'] }} ditahan</span>
+                                            @if ($baris['sesi_tidak_sah'] > 0)<span class="block whitespace-nowrap">{{ $baris['sesi_tidak_sah'] }} tidak sah</span>@endif
+                                            @if ($baris['sesi_dikembalikan'] > 0)<span class="block whitespace-nowrap">{{ $baris['sesi_dikembalikan'] }} dikembalikan</span>@endif
+                                        </td>
                                         <td class="angka text-right">{{ Format::rupiah($baris['total']) }}</td>
-                                        <td class="angka text-right">{{ bccomp($baris['pengembalian'], '0', 2) === 1 ? '− '.Format::rupiah($baris['pengembalian']) : '–' }}</td>
-                                        <td class="angka text-right">− {{ Format::rupiah($baris['komisi']) }}</td>
-                                        <td class="angka text-right font-bold">{{ Format::rupiah($baris['bersih']) }}</td>
+                                        <td class="angka text-right font-bold">{{ Format::rupiah($baris['tersedia']) }}</td>
+                                        <td class="angka text-right">{{ Format::rupiah($baris['ditahan']) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+                    <p class="mt-3 text-[0.875rem] text-pensil-muda">Tersedia dan ditahan adalah bagian Anda setelah komisi. Sesi tidak sah dan sesi yang dikembalikan ke orang tua tidak menjadi pendapatan Anda.</p>
                 @endif
             </x-dasbor.panel>
 

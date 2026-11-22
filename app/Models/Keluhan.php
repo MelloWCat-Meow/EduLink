@@ -63,6 +63,16 @@ class Keluhan extends Model
     }
 
     /**
+     * The disputed session, for complaints opened by a dispute.
+     *
+     * @return BelongsTo<SesiPembelajaran, $this>
+     */
+    public function sesi(): BelongsTo
+    {
+        return $this->belongsTo(SesiPembelajaran::class, 'id_sesi', 'id_sesi');
+    }
+
+    /**
      * @return BelongsTo<AkunPengguna, $this>
      */
     public function pengaju(): BelongsTo

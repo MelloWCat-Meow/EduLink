@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StatusKonfirmasiSesi;
 use App\Enums\StatusPesanan;
 use App\Models\Pesanan;
 use App\Models\SesiPembelajaran;
@@ -30,6 +31,13 @@ class BerandaController extends Controller
             ->orderBy('waktu')
             ->first();
 
+        $menungguKonfirmasi = SesiPembelajaran::query()
+            ->whereHas('pesanan', fn ($pesanan) => $pesanan->milikAkun($idAkun))
+            ->where('status_konfirmasi', StatusKonfirmasiSesi::MenungguKonfirmasi)
+            ->with(['pesanan.siswa', 'pesanan.tutor', 'pesanan.mapel'])
+            ->orderBy('dicatat_pada')
+            ->get();
+
         $belumDiulas = Pesanan::query()->milikAkun($idAkun)
             ->where('status', StatusPesanan::Selesai)
             ->whereDoesntHave('ulasan')
@@ -43,6 +51,7 @@ class BerandaController extends Controller
             'akun' => $request->user(),
             'menungguBayar' => $menungguBayar,
             'sesiTerdekat' => $sesiTerdekat,
+            'menungguKonfirmasi' => $menungguKonfirmasi,
             'belumDiulas' => $belumDiulas,
             'aktif' => $aktif,
             'jumlahAnak' => $request->user()->siswa()->count(),
