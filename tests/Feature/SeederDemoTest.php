@@ -3,17 +3,21 @@
 namespace Tests\Feature;
 
 use App\Enums\Peran;
+use App\Enums\StatusJadwal;
 use App\Enums\StatusPesanan;
 use App\Enums\StatusTutor;
 use App\Enums\StatusVerifikasiTutor;
 use App\Models\AkunPengguna;
 use App\Models\DokumenVerifikasi;
+use App\Models\JadwalKetersediaan;
 use App\Models\Pesanan;
 use App\Models\SesiPembelajaran;
 use App\Models\Tutor;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class SeederDemoTest extends TestCase
@@ -123,6 +127,38 @@ class SeederDemoTest extends TestCase
         // Every seeded document points at a real file on the private disk.
         foreach (DokumenVerifikasi::query()->pluck('berkas') as $berkas) {
             Storage::disk('local')->assertExists($berkas);
+        }
+    }
+
+    /**
+     * Dewi's "tomorrow" slot shares a weekday with one of her fixed slots on
+     * some days (on a Sunday it is Monday). The seeder must still pick free
+     * slots only, whatever day it runs, and never put two active orders on one slot.
+     */
+    #[TestWith(['2026-11-23 08:00'])]
+    #[TestWith(['2026-11-24 13:00'])]
+    #[TestWith(['2026-11-25 19:00'])]
+    #[TestWith(['2026-11-26 07:30'])]
+    #[TestWith(['2026-11-27 21:00'])]
+    #[TestWith(['2026-11-28 10:00'])]
+    #[TestWith(['2026-11-29 16:00'])]
+    public function test_the_seeder_runs_on_any_day_and_keeps_slots_consistent(string $waktu): void
+    {
+        $this->travelTo(Carbon::parse($waktu));
+        $this->seed(DatabaseSeeder::class);
+
+        $statusSlot = [
+            StatusPesanan::MenungguKonfirmasiTutor->value => StatusJadwal::Ditahan,
+            StatusPesanan::MenungguPembayaran->value => StatusJadwal::Ditahan,
+            StatusPesanan::Dibayar->value => StatusJadwal::Terisi,
+        ];
+        $aktif = Pesanan::query()->whereIn('status', array_keys($statusSlot))->get();
+
+        $this->assertSame($aktif->count(), $aktif->unique('id_jadwal')->count(), 'satu slot dipakai lebih dari satu pesanan aktif');
+
+        foreach (JadwalKetersediaan::query()->where('status', '!=', StatusJadwal::Nonaktif)->get() as $slot) {
+            $pesanan = $aktif->firstWhere('id_jadwal', $slot->id_jadwal);
+            $this->assertSame($pesanan ? $statusSlot[$pesanan->status->value] : StatusJadwal::Tersedia, $slot->status, 'slot '.$slot->id_jadwal);
         }
     }
 }
