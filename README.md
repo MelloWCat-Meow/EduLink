@@ -1,58 +1,188 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# EduLink Tutor
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+EduLink Tutor adalah layanan pemesanan guru les privat SD, SMP, dan SMA di Kota Jambi, dari PT EduLink Teknologi Indonesia. Orang tua mencari tutor terverifikasi, memesan slot mingguan, membayar lewat platform, lalu memantau sesi dan memberi ulasan. Tutor mendaftar (atau mengaktifkan akun kalau sudah mengajar di bimbel EduLink), diverifikasi tim akademik, lalu menerima pesanan, mencatat sesi, dan mencairkan pendapatan. Admin memverifikasi tutor, memantau pesanan, menangani keluhan, pengembalian dana, pencairan, dan laporan.
 
-## About Laravel
+Dibangun dengan Laravel 13, Blade, dan Tailwind CSS 4, untuk tugas mata kuliah Arsitektur Sistem Perusahaan.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Kebutuhan
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.4 atau lebih baru, dengan ekstensi `bcmath`, `intl`, `pdo_mysql`, dan `fileinfo`
+- Composer 2
+- Node.js 20 atau lebih baru, dengan npm
+- MySQL 8 atau MariaDB 10.6 ke atas
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Instalasi
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Buka `.env`, lalu isi koneksi database (`DB_CONNECTION=mysql`, `DB_DATABASE=edulink`, `DB_USERNAME`, `DB_PASSWORD`). Buat database kosong bernama `edulink`, kemudian:
 
-## Contributing
+```bash
+php artisan migrate:fresh --seed
+php artisan storage:link
+npm install
+npm run build
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+`migrate:fresh --seed` menghapus semua tabel lalu mengisinya dengan data demo. Jalankan ulang kapan saja untuk kembali ke kondisi awal demo. Tanggal dalam data demo selalu relatif terhadap hari ini.
 
-## Code of Conduct
+## Menjalankan
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Buka dua terminal:
 
-## Security Vulnerabilities
+```bash
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan schedule:work
+```
 
-## License
+`schedule:work` menjalankan tugas terjadwal:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Perintah | Jadwal | Fungsi |
+|---|---|---|
+| `edulink:lepas-penahanan` | setiap menit | Membatalkan pesanan yang tidak dijawab tutor atau tidak dibayar dalam 24 jam, dan melepas slotnya. |
+| `edulink:jadwal-ulang-kedaluwarsa` | setiap menit | Menandai pengajuan jadwal ulang yang tidak dijawab sampai waktu sesi semula. |
+| `edulink:konfirmasi-otomatis` | setiap jam | Mengonfirmasi otomatis sesi yang tidak dikonfirmasi atau disanggah orang tua dalam 48 jam setelah dicatat tutor. |
+| `edulink:pengingat-sesi` | setiap hari 07.00 | Mengirim pengingat H-1 ke orang tua dan tutor, sekali per sesi. Tutor diingatkan kalau tautan meeting sesi besok belum diisi. |
+
+Pelepasan slot kedaluwarsa juga terjadi otomatis setiap kali halaman membaca pesanan atau jadwal, jadi demo tetap benar walaupun `schedule:work` tidak berjalan.
+
+Email (tautan aktivasi, reset kata sandi, notifikasi penting) memakai mailer `log` dan tercatat di `storage/logs/laravel.log`.
+
+## Mode demo
+
+Pembayaran disimulasikan: tidak ada payment gateway sungguhan yang tersambung. Sesi online memakai tautan Google Meet, Zoom, atau layanan lain milik tutor sendiri, yang dibagikan tutor dari detail pesanan; EduLink tidak menjalankan layanan video. Mode demo diatur lewat `EDULINK_MODE_DEMO` di `.env`:
+
+- Kosong, tidak diisi, atau nilai yang tidak dikenali: aktif kalau `APP_ENV` bernilai `local` atau `testing`, mati di environment lain.
+- `true`, `1`, `on`, atau `yes`: aktif di mana saja, termasuk hosting atau ngrok dengan `APP_ENV=production` untuk presentasi.
+- `false`, `0`, `off`, atau `no`: mati.
+
+Test selalu berjalan dengan mode demo aktif (diatur di `phpunit.xml`), apa pun isi `.env` Anda.
+
+Selama mode demo aktif:
+
+- Tombol **Bayar** membuka halaman gateway tiruan dengan pilihan Berhasil atau Gagal. Hasilnya dikirim ke `POST /webhooks/payment` dengan tanda tangan HMAC.
+- Tautan aktivasi tutor internal dan tautan reset kata sandi selalu "dikirim" lewat mailer `log`. Kalau `EDULINK_TAUTAN_DI_LAYAR=true`, tautan itu juga ditampilkan di layar dengan label "Mode demo", kecuali tautan reset akun admin, yang tidak pernah ditampilkan. Flag ini mati secara bawaan; nyalakan hanya saat demo di `localhost`.
+
+### Mengambil tautan dari log email
+
+Kalau tautan tidak ditampilkan di layar (flag mati, atau akun admin), ambil dari log setelah menekan tombol kirim:
+
+```bash
+# Tautan reset kata sandi terakhir
+grep -oE 'https?://[^"<> ]*/lupa-kata-sandi/[^"<> ]*' storage/logs/laravel.log | tail -1 | sed 's/&amp;/\&/g'
+
+# Tautan aktivasi tutor internal terakhir
+grep -oE 'https?://[^"<> ]*/aktivasi-tutor/[^"<> ]*' storage/logs/laravel.log | tail -1 | sed 's/&amp;/\&/g'
+```
+
+Di Windows (PowerShell):
+
+```powershell
+(Select-String -Path storage\logs\laravel.log -Pattern 'https?://[^"<> ]*/aktivasi-tutor/[^"<> ]*' -AllMatches).Matches.Value | Select-Object -Last 1 | ForEach-Object { $_ -replace '&amp;', '&' }
+```
+
+Ganti `aktivasi-tutor` dengan `lupa-kata-sandi` untuk tautan reset. Buka tautannya lewat alamat yang sama dengan `APP_URL` (tautan aktivasi ditandatangani untuk alamat itu).
+- Perintah `edulink:simulasi-tutor` dan `edulink:simulasi-sesi` tersedia untuk demo cepat.
+
+## Menyiapkan presentasi
+
+Sebelum presentasi, siapkan ulang data demo:
+
+```bash
+php artisan edulink:siapkan-demo
+```
+
+Perintah ini hanya berjalan di mode demo dan meminta konfirmasi, karena menghapus seluruh isi database. Isinya: `migrate:fresh --seed`, menghapus berkas dokumen tutor contoh yang lama, membersihkan cache, lalu mencetak akun demo dan alamat halaman penting. Tanggal di data demo dihitung dari saat perintah dijalankan, sehingga selalu ada sesi hari ini, tagihan yang masih punya sisa waktu bayar, dan sesi yang menunggu konfirmasi orang tua. Jalankan pada hari presentasi, sebaiknya sebelum pukul 22.00 (setelah itu sesi "hari ini" tidak dibuat).
+
+Naskah demo langkah demi langkah ada di [docs/skenario-presentasi.md](docs/skenario-presentasi.md).
+
+### Presentasi lewat ngrok
+
+1. Jalankan `php artisan serve`, lalu `ngrok http 8000`.
+2. Di `.env`, isi `APP_URL` dengan alamat `https://....ngrok-free.app` dari ngrok, `EDULINK_MODE_DEMO=true`, `EDULINK_TAUTAN_DI_LAYAR=false`, dan `APP_DEBUG=false`. Alamat ngrok gratis berubah setiap kali ngrok dijalankan ulang, jadi perbarui `APP_URL` setiap kali.
+   - `EDULINK_TAUTAN_DI_LAYAR=false`: alamat ngrok bisa dibuka siapa saja, dan tautan reset di layar memungkinkan orang lain mengambil alih akun demo. Ambil tautan aktivasi atau reset dari log saat dibutuhkan (lihat "Mengambil tautan dari log email").
+   - `APP_DEBUG=false`: kalau terjadi galat, pengunjung melihat halaman galat biasa, bukan stack trace dan potongan kode.
+3. Jalankan `npm run build`, **bukan** `npm run dev`. Selama dev server Vite berjalan, CSS dan JS diambil dari `localhost:5173`, yang tidak bisa dibuka dari perangkat lain, sehingga halaman tampil tanpa gaya.
+4. Jalankan `php artisan optimize:clear` (atau `edulink:siapkan-demo`) supaya perubahan `.env` terbaca.
+
+Aplikasi mempercayai header `X-Forwarded-*` hanya dari proxy di mesin yang sama (`127.0.0.1`), yaitu agen ngrok, sehingga tautan, CSS, dan JS memakai `https`.
+
+## Akun demo
+
+| Peran | Email | Kata sandi | Keadaan |
+|---|---|---|---|
+| Admin | admin@edulink.test | admin12345 | Admin Dewi Lestari |
+| Orang tua | siti.aminah@edulink.test | orangtua123 | Anak: Nadia (SD) dan Raka (SMP); punya pesanan di semua status |
+| Orang tua | budi.santoso@edulink.test | orangtua123 | Anak: Dimas (SMA) |
+| Tutor terverifikasi | rina.marlina@edulink.test | tutor12345 | Permintaan baru, sesi lewat yang belum dicatat (pesanan online tanpa tautan meeting), sesi yang disanggah dan menunggu admin, saldo tersedia, dan dana ditahan; tidak ada pencairan menunggu, jadi bisa mengajukan saat demo |
+| Tutor terverifikasi | andi.pratama@edulink.test | tutor12345 | Pesanan di semua status, sesi kemarin yang menunggu konfirmasi Budi, tautan Meet sudah diisi, saldo tersedia tanpa pengajuan menunggu |
+| Tutor terverifikasi | dewi.anggraini@edulink.test | tutor12345 | Sesi hari ini (satu jam lagi saat data disiapkan), sesi yang dikonfirmasi otomatis, sesi besok dengan tautan Zoom khusus (untuk pengingat H-1) |
+| Tutor internal | yusuf.hidayat@edulink.test | tutor12345 | Pengajuan pencairan Rp300.000 yang menunggu persetujuan admin |
+| Tutor menunggu verifikasi | nurul.aisyah@edulink.test, bayu.firmansyah@edulink.test | tutor12345 | Halaman "Sedang diperiksa" |
+| Tutor perlu perbaikan | intan.permata@edulink.test | tutor12345 | KTP ditolak dan profil diberi catatan |
+| Tutor draf | galih.prakoso@edulink.test | tutor12345 | Pendaftaran belum dikirim |
+| Tutor internal belum aktivasi | lestari.putri@edulink.test, rahmat.saputra@edulink.test | dibuat saat aktivasi | Aktivasi di `/aktivasi-tutor` |
+
+## Skenario demo
+
+Semua langkah lewat tampilan, tanpa perintah simulasi. Pakai dua jendela browser (atau satu jendela biasa dan satu jendela samaran) supaya bisa masuk sebagai dua peran sekaligus.
+
+1. **Orang tua memesan.** Masuk sebagai Siti, buka **Cari tutor**, pilih Andi Pratama, lalu **Pesan**. Pilih anak Raka, mapel Bahasa Inggris SMP, slot Kamis 19.00 (sengaja dibiarkan kosong di data demo), tanggal mulai, durasi, dan jumlah pertemuan. Periksa total, lalu konfirmasi.
+2. **Tutor menerima.** Masuk sebagai Andi. Lonceng notifikasi menunjukkan permintaan baru, dan Beranda menampilkan hitung mundur batas menjawab. Buka pesanan, lalu **Terima pesanan** (atau **Tolak** dengan alasan).
+3. **Orang tua membayar.** Kembali sebagai Siti, buka pesanan itu, pilih cara bayar, lalu **Bayar**. Di halaman gateway tiruan pilih **Berhasil** (pembayaran disimulasikan). Status menjadi Dibayar, jadwal sesi dibuat, dan tombol **Chat tutor via WhatsApp** muncul.
+4. **Tutor membagikan tautan meeting.** Sebagai Andi, buka pesanan itu, isi **Tautan meeting pesanan** dengan tautan Google Meet atau Zoom miliknya. Tautan bisa diganti khusus untuk satu sesi. Sebelum diisi, Siti melihat "Tutor belum membagikan tautan meeting".
+5. **Jadwal ulang (opsional).** Di detail pesanan, salah satu pihak mengajukan jadwal ulang untuk sesi yang masih lebih dari 24 jam lagi; pihak lain menyetujui atau menolak.
+6. **Tutor mencatat sesi.** Masuk sebagai Rina, buka **Sesi**. Ada sesi IPA SD Nadia yang sudah lewat dan belum dicatat. Pilih **Terlaksana** (atau **Siswa tidak hadir**), tulis catatan materi, lalu simpan. Sesi menunggu konfirmasi orang tua, dan bagian Rina untuk sesi itu tampil sebagai **Dana ditahan** di **Pendapatan**.
+7. **Orang tua mengonfirmasi atau menyanggah.** Sebagai Siti, buka Beranda: kartu "Sesi menunggu konfirmasi Anda" menampilkan sisa waktunya. Klik **Konfirmasi sesi** (bisa juga langsung dari halaman notifikasi), atau **Sanggah** dengan alasan. Setelah dikonfirmasi, bagian Rina pindah dari dana ditahan ke **saldo tersedia**. Pesanan baru selesai saat semua sesinya dikonfirmasi.
+8. **Admin memutuskan sanggahan.** Masuk sebagai admin, buka **Keluhan**. Ada sanggahan Siti atas sesi Rina sebelumnya (jenis "Sanggahan sesi"). Pilih **Sesi sah** atau **Sesi tidak sah** dengan alasan. Kalau tidak sah, biaya sesi itu masuk **Pengembalian dana** untuk Siti dan Rina tidak dibayar untuk sesi itu.
+9. **Tutor mengajukan pencairan.** Kembali sebagai Rina, buka **Pendapatan**, ajukan pencairan sebesar saldo tersedia atau kurang. Dana ditahan tidak bisa dicairkan.
+10. **Admin menyetujui.** Sebagai admin, buka **Pencairan dana**, setujui pengajuan Rina (pengajuan Yusuf juga sudah menunggu), lalu tandai dibayar setelah transfer.
+11. **Ulasan.** Sebagai Siti, buka pesanan yang selesai (mis. Matematika SD dengan Rina), beri nilai dan komentar.
+12. **Admin, lainnya.**
+   - **Ringkasan:** komisi diakui per sesi yang dikonfirmasi pada periode itu, komisi ditahan, grafik, **Unduh CSV**, dan **Cetak**.
+   - **Verifikasi tutor:** setujui Nurul, atau minta perbaikan.
+   - **Pesanan:** batalkan pesanan yang sudah dibayar dengan alasan; biaya sesi yang belum dicatat otomatis masuk pengembalian dana.
+   - **Kelola tutor** dan **Data pengguna:** ubah mata pelajaran, nonaktifkan atau aktifkan akun.
+
+### Mempercepat konfirmasi otomatis untuk demo
+
+Konfirmasi otomatis normalnya terjadi 48 jam setelah tutor mencatat sesi. Untuk demo, jalankan:
+
+```bash
+php artisan edulink:konfirmasi-otomatis --setelah=0
+```
+
+Semua sesi yang menunggu konfirmasi langsung dikonfirmasi otomatis, dan kedua pihak menerima notifikasi. Opsi `--setelah` (jumlah jam) hanya boleh diubah dari 48 saat mode demo aktif. Tanpa opsi, perintah ini sama dengan yang dijalankan terjadwal setiap jam.
+
+Alur pendaftaran tutor:
+
+- **Eksternal:** daftar di `/daftar-tutor`, isi lima langkah, kirim, lalu admin menyetujui di **Verifikasi tutor**. Tutor itu kemudian tampil di `/tutor`.
+- **Internal:** buka `/aktivasi-tutor` dengan `lestari.putri@edulink.test`, lalu buka tautan aktivasinya (di layar kalau `EDULINK_TAUTAN_DI_LAYAR=true`, atau dari log email), buat kata sandi, lengkapi tarif, kecamatan, dan jadwal, lalu kirim. Admin kemudian menyetujuinya.
+
+## Test
+
+```bash
+php artisan test
+```
+
+Test memakai SQLite di memori, jadi tidak menyentuh database MySQL. Untuk menjalankan sebagian saja:
+
+```bash
+php artisan test --filter=JadwalUlang
+php artisan test tests/Feature/Pesanan
+```
+
+## Dokumentasi lain
+
+- [`docs/daftar-tabel.md`](docs/daftar-tabel.md): semua tabel dan kolom, ditandai mana yang dari ERD dan mana yang tambahan, beserta alasannya.
+- [`docs/arsitektur.md`](docs/arsitektur.md): ERD, diagram status pesanan, konfirmasi sesi, dan verifikasi tutor, diagram komponen, serta perbedaan dengan rancangan arsitektur target.
+- [`docs/skenario-presentasi.md`](docs/skenario-presentasi.md): naskah demo 12–15 menit beserta rencana cadangan.
+- [`docs/checklist-uji-manual.md`](docs/checklist-uji-manual.md): halaman dan aksi yang perlu dicek sendiri di HP dan desktop.
+- Kebijakan privasi dan syarat ketentuan ada di aplikasi: `/kebijakan-privasi` dan `/syarat-ketentuan`. Keduanya rancangan untuk tugas dan belum ditinjau ahli hukum.

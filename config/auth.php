@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Models\AkunPengguna;
 
 return [
 
@@ -17,7 +17,7 @@ return [
 
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'passwords' => env('AUTH_PASSWORD_BROKER', 'akun_pengguna'),
     ],
 
     /*
@@ -40,7 +40,7 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'akun_pengguna',
         ],
     ],
 
@@ -62,9 +62,10 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        // Sign-in accounts live in akun_pengguna (Akun_Pengguna in the EduLink report).
+        'akun_pengguna' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model' => env('AUTH_MODEL', AkunPengguna::class),
         ],
 
         // 'users' => [
@@ -92,9 +93,10 @@ return [
     |
     */
 
+    // Password reset is not built yet; its token table was dropped with users.
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
+        'akun_pengguna' => [
+            'provider' => 'akun_pengguna',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,

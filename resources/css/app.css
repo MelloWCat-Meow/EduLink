@@ -1,9 +1,714 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/bricolage-grotesque/wdth.css';
+@import '@fontsource/atkinson-hyperlegible/latin-400.css';
+@import '@fontsource/atkinson-hyperlegible/latin-700.css';
+@import '@fontsource/kalam/latin-400.css';
+@import '@fontsource/kalam/latin-700.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * "Buku Tulis": a school exercise book.
+ * Blue ruled lines and a red margin rule on near-white paper, ballpoint
+ * blue for handwriting, one yellow highlighter for the words that matter.
+ * The verification form and its stamp are the only "official" register.
+ */
+
+/*
+ * Atkinson Hyperlegible draws zero with a slash and has no OpenType
+ * feature to turn it off, so digits come from Bricolage Grotesque instead.
+ */
+@font-face {
+    font-family: 'Angka EduLink';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 200 800;
+    font-stretch: 75% 100%;
+    src: url('../../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wdth-normal.woff2') format('woff2-variations');
+    unicode-range: U+0030-0039;
+}
+
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, sans-serif;
+    --font-teks: 'Angka EduLink', 'Atkinson Hyperlegible', ui-sans-serif, sans-serif;
+    --font-tangan: 'Kalam', cursive;
+
+    --color-kertas: #fdfdf9;
+    --color-garis: #cfdff0;
+    --color-margin: #e5484d;
+    --color-cap: #c0262d;
+    --color-tinta: #1d2d8c;
+    --color-tinta-tua: #14206a;
+    --color-pensil: #25252b;
+    --color-pensil-muda: #55565f;
+    --color-stabilo: #ffe45c;
+    --color-sticky: #fff2a6;
+    --color-langit: #d9ebff;
+    --color-mint: #d3f5dc;
+    --color-jambu: #ffdbe6;
+    --color-map: #eef1ea;
+
+    /* Data marks in charts: mid-tone ink blue, validated for lightness band and contrast. */
+    --color-grafik: #3b5bdb;
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+    }
+
+    body,
+    .kertas-garis {
+        --margin-x: 0.875rem;
+
+        background-color: var(--color-kertas);
+        background-image:
+            linear-gradient(
+                to right,
+                transparent calc(var(--margin-x) - 1px),
+                var(--color-margin) calc(var(--margin-x) - 1px) var(--margin-x),
+                transparent var(--margin-x) calc(var(--margin-x) + 3px),
+                var(--color-margin) calc(var(--margin-x) + 3px) calc(var(--margin-x) + 4px),
+                transparent calc(var(--margin-x) + 4px)
+            ),
+            repeating-linear-gradient(
+                to bottom,
+                transparent 0 calc(2rem - 1px),
+                var(--color-garis) calc(2rem - 1px) 2rem
+            );
+    }
+
+    body {
+        min-height: 100vh;
+        font-family: var(--font-teks);
+        color: var(--color-pensil);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    @media (width >= 64rem) {
+        body,
+        .kertas-garis {
+            --margin-x: 4.5rem;
+        }
+    }
+
+    [id] {
+        scroll-margin-top: 1.5rem;
+    }
+
+    :focus-visible {
+        outline: 3px solid var(--color-tinta);
+        outline-offset: 3px;
+    }
+
+    .di-gelap :focus-visible {
+        outline-color: var(--color-stabilo);
+    }
+
+    summary::-webkit-details-marker {
+        display: none;
+    }
+
+    a[href],
+    button,
+    summary,
+    select,
+    label {
+        cursor: pointer;
+    }
+}
+
+@layer components {
+    .lewati {
+        position: absolute;
+        left: -9999px;
+    }
+
+    .lewati:focus {
+        left: 1rem;
+        top: 1rem;
+        z-index: 50;
+        background: var(--color-tinta);
+        color: #fff;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Content column that starts to the right of the red margin rule. */
+    .halaman {
+        padding-left: 2rem;
+        padding-right: 1rem;
+    }
+
+    @media (width >= 40rem) {
+        .halaman {
+            padding-right: 2rem;
+        }
+    }
+
+    @media (width >= 64rem) {
+        .halaman {
+            padding-left: 7rem;
+        }
+    }
+
+    /* Squared maths paper, used to set a section apart from the ruled pages. */
+    .kertas-kotak {
+        background-color: var(--color-kertas);
+        background-image:
+            linear-gradient(to right, var(--color-garis) 1px, transparent 1px),
+            linear-gradient(to bottom, var(--color-garis) 1px, transparent 1px);
+        background-size: 1.5rem 1.5rem;
+    }
+
+    /* Torn paper edge where one sheet sits on top of another. */
+    .sobek-atas {
+        clip-path: polygon(0 0.9rem, 4% 0.3rem, 9% 0.8rem, 15% 0.1rem, 22% 0.7rem, 28% 0.2rem, 35% 0.9rem, 42% 0.3rem, 49% 0.75rem, 56% 0.05rem, 63% 0.6rem, 70% 0.15rem, 77% 0.85rem, 84% 0.25rem, 91% 0.7rem, 96% 0.2rem, 100% 0.6rem, 100% 100%, 0 100%);
+    }
+
+    /* Highlighter stroke, slightly slanted at the ends like a real marker. */
+    .stabilo {
+        background-image: linear-gradient(
+            100deg,
+            transparent 0.4%,
+            var(--color-stabilo) 1.5%,
+            var(--color-stabilo) 97%,
+            transparent 99%
+        );
+        background-repeat: no-repeat;
+        background-size: 100% 0.62em;
+        background-position: 0 86%;
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+        padding-inline: 0.08em;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .stabilo-sapu {
+            animation: sapuan-stabilo 0.7s cubic-bezier(0.3, 0.7, 0.2, 1) 0.35s both;
+        }
+
+        .coretan {
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
+            animation: gores 0.6s ease-out 1s forwards;
+        }
+    }
+
+    @keyframes sapuan-stabilo {
+        from {
+            background-size: 0% 0.62em;
+        }
+    }
+
+    @keyframes gores {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    /* Subject links: the highlighter sweeps in on hover and focus. */
+    .chip-mapel {
+        background-image: linear-gradient(100deg, transparent 0.5%, var(--color-stabilo) 2%, var(--color-stabilo) 97%, transparent 99%);
+        background-repeat: no-repeat;
+        background-size: 0% 0.7em;
+        background-position: 0 88%;
+        transition: background-size 0.3s cubic-bezier(0.3, 0.7, 0.2, 1);
+    }
+
+    .chip-mapel:hover,
+    .chip-mapel:focus-visible {
+        background-size: 100% 0.7em;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .chip-mapel {
+            transition: none;
+        }
+    }
+
+    /* Strip of masking tape holding a photo or note to the page. */
+    .selotip::before {
+        content: '';
+        position: absolute;
+        top: -0.85rem;
+        left: 50%;
+        width: 5.5rem;
+        height: 1.6rem;
+        translate: -50% 0;
+        rotate: -4deg;
+        background: rgb(236 226 196 / 0.82);
+        box-shadow: 0 1px 0 rgb(0 0 0 / 0.06);
+        clip-path: polygon(3% 0, 97% 4%, 100% 50%, 96% 100%, 2% 96%, 0 50%);
+    }
+
+    .polaroid {
+        transition:
+            rotate 0.35s cubic-bezier(0.3, 0.7, 0.2, 1.3),
+            translate 0.35s cubic-bezier(0.3, 0.7, 0.2, 1.3),
+            box-shadow 0.35s;
+    }
+
+    .polaroid:hover,
+    .polaroid:focus-within {
+        rotate: 0deg;
+        translate: 0 -0.35rem;
+        box-shadow: 0 18px 30px -18px rgb(29 45 140 / 0.45);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .polaroid {
+            transition: none;
+        }
+    }
+
+    /* Hand-drawn circle around the chosen level. */
+    .lingkaran {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        transition: stroke-dashoffset 0.4s ease-out;
+    }
+
+    .pilihan-jenjang:checked + .tanda-jenjang .lingkaran {
+        stroke-dashoffset: 0;
+    }
+
+    .pilihan-jenjang:focus-visible + .tanda-jenjang {
+        outline: 3px solid var(--color-tinta);
+        outline-offset: 4px;
+        border-radius: 999px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .lingkaran {
+            transition: none;
+        }
+    }
+
+    .isian {
+        appearance: none;
+        width: 100%;
+        border: 0;
+        border-bottom: 2px dashed var(--color-pensil-muda);
+        background: transparent
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%231d2d8c' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M4 7.5c2 2.2 4 4 6 5.6 2-1.8 4-3.6 6-5.8'/%3E%3C/svg%3E")
+            no-repeat right 0.25rem center / 1.1rem;
+        padding: 0.35rem 2rem 0.35rem 0.1rem;
+        font-family: var(--font-tangan);
+        font-size: 1.375rem;
+        line-height: 1.4;
+        color: var(--color-tinta);
+        border-radius: 0;
+    }
+
+    .isian:focus-visible {
+        outline-offset: 4px;
+        border-bottom-style: solid;
+        border-bottom-color: var(--color-tinta);
+    }
+
+    /* Text field written on the sheet: a dashed line to write on. */
+    .isian-teks {
+        width: 100%;
+        border: 0;
+        border-bottom: 2px dashed var(--color-pensil-muda);
+        background: transparent;
+        padding: 0.35rem 0.1rem;
+        font-family: var(--font-tangan);
+        font-size: 1.375rem;
+        line-height: 1.4;
+        color: var(--color-tinta);
+        border-radius: 0;
+    }
+
+    .isian-teks::placeholder {
+        color: var(--color-pensil-muda);
+        opacity: 0.75;
+    }
+
+    .isian-teks:focus-visible {
+        outline-offset: 4px;
+        border-bottom-style: solid;
+        border-bottom-color: var(--color-tinta);
+    }
+
+    /* A field with a mistake gets the teacher's red pen: solid red line, not only a colour change. */
+    .isian-teks[aria-invalid='true'] {
+        border-bottom: 3px solid var(--color-cap);
+        background-image: linear-gradient(transparent calc(100% - 0.35rem), rgb(192 38 45 / 0.08) 0);
+    }
+
+    .koreksi {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.4rem;
+        margin-top: 0.4rem;
+        font-family: var(--font-tangan);
+        font-size: 1.15rem;
+        line-height: 1.35;
+        color: var(--color-cap);
+    }
+
+    /* Longer answers on the application sheet: write on the ruled lines. */
+    textarea.isian-tulis {
+        display: block;
+        width: 100%;
+        min-height: 8rem;
+        resize: vertical;
+        border: 0;
+        border-left: 2px dashed var(--color-pensil-muda);
+        background: transparent repeating-linear-gradient(to bottom, transparent 0 calc(2.1rem - 1px), var(--color-garis) calc(2.1rem - 1px) 2.1rem);
+        background-attachment: local;
+        padding: 0.3rem 0.5rem 0;
+        font-family: var(--font-tangan);
+        font-size: 1.25rem;
+        line-height: 2.1rem;
+        color: var(--color-tinta);
+    }
+
+    textarea.isian-tulis:focus-visible {
+        outline-offset: 2px;
+        border-left: 3px solid var(--color-tinta);
+    }
+
+    textarea.isian-tulis[aria-invalid='true'] {
+        border-left: 4px solid var(--color-cap);
+    }
+
+    /* File picker on the application sheet: a visible button, not the browser's grey default. */
+    .unggah {
+        width: 100%;
+        font-size: 0.9375rem;
+    }
+
+    .unggah::file-selector-button {
+        margin-right: 0.75rem;
+        min-height: 2.75rem;
+        border: 2px solid var(--color-pensil);
+        border-radius: 0.55rem 0.8rem 0.5rem 0.85rem;
+        background: #fff;
+        padding: 0 1rem;
+        font: inherit;
+        font-weight: 700;
+        color: var(--color-pensil);
+        cursor: pointer;
+    }
+
+    .unggah::file-selector-button:hover {
+        background: var(--color-sticky);
+    }
+
+    .unggah[aria-invalid='true']::file-selector-button {
+        border-color: var(--color-cap);
+    }
+
+    /*
+     * Password field with the show/hide toggle (resources/js/kata-sandi.js):
+     * room on the right so typed text never runs under the eye icon, in both
+     * the password and the revealed text state, with or without an error.
+     */
+    .kolom-sandi > input {
+        padding-right: 3rem;
+    }
+
+    /* Only one eye icon: hide the browser's own reveal and clear buttons. */
+    .kolom-sandi > input::-ms-reveal,
+    .kolom-sandi > input::-ms-clear {
+        display: none;
+    }
+
+    .tombol-sandi:focus-visible {
+        outline-offset: 0;
+    }
+
+    /* Hand-drawn check box for "ingat saya". */
+    .centang {
+        appearance: none;
+        flex-shrink: 0;
+        width: 1.6rem;
+        height: 1.6rem;
+        border: 2px solid var(--color-pensil);
+        border-radius: 0.2rem 0.35rem 0.15rem 0.3rem;
+        background: #fff no-repeat center / 1.3rem;
+        cursor: pointer;
+    }
+
+    .centang:checked {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke='%231d2d8c' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 21c4 3 7 7 9 11 5-11 11-19 18-25'/%3E%3C/svg%3E");
+    }
+
+    /*
+     * Rubber stamp. The grain comes from an SVG mask so the ink looks
+     * pressed, not printed. It lands once when the form scrolls into view.
+     */
+    .cap {
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.6 2.15'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+        mask-size: 160px 160px;
+    }
+
+    @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+            .cap-turun {
+                animation: tekan-cap linear both;
+                animation-timeline: view();
+                animation-range: entry 40% cover 45%;
+            }
+        }
+    }
+
+    @keyframes tekan-cap {
+        0% {
+            opacity: 0;
+            scale: 1.6;
+        }
+
+        70% {
+            opacity: 1;
+            scale: 0.96;
+        }
+
+        100% {
+            opacity: 1;
+            scale: 1;
+        }
+    }
+
+    /* The old way gets crossed out as the list scrolls past. */
+    .coret-lama {
+        background-image: linear-gradient(var(--color-margin), var(--color-margin));
+        background-repeat: no-repeat;
+        background-size: 100% 2px;
+        background-position: 0 55%;
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+    }
+
+    @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+            .coret-lama {
+                animation: coret linear both;
+                animation-timeline: view();
+                animation-range: entry 60% cover 40%;
+            }
+        }
+    }
+
+    @keyframes coret {
+        from {
+            background-size: 0% 2px;
+        }
+    }
+
+    /*
+     * Dashboard: a working tool. Paper, highlighter and handwriting stay as
+     * accents (page titles, empty states, the to-do note); data sits on plain
+     * white sheets in the reading face.
+     */
+    .kontrol {
+        width: 100%;
+        min-height: 2.75rem;
+        border: 2px solid rgb(37 37 43 / 0.28);
+        border-radius: 0.45rem;
+        background-color: #fff;
+        padding: 0.45rem 0.7rem;
+        color: var(--color-pensil);
+        font: inherit;
+    }
+
+    .kontrol:focus-visible {
+        outline: 3px solid var(--color-tinta);
+        outline-offset: 1px;
+        border-color: var(--color-tinta);
+    }
+
+    .kontrol[aria-invalid='true'] {
+        border-color: var(--color-cap);
+        box-shadow: inset 0 -3px 0 var(--color-cap);
+    }
+
+    select.kontrol {
+        appearance: none;
+        padding-right: 2.25rem;
+        background: #fff
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2325252b' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M5 8l5 5 5-5'/%3E%3C/svg%3E")
+            no-repeat right 0.6rem center / 1rem;
+    }
+
+    textarea.kontrol {
+        min-height: 7rem;
+        line-height: 1.5;
+    }
+
+    .tombol {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.55rem 0.8rem 0.5rem 0.85rem;
+        background: var(--color-tinta);
+        padding: 0 1.15rem;
+        font-weight: 700;
+        color: #fff;
+        box-shadow: 3px 3px 0 var(--color-stabilo);
+    }
+
+    .tombol:hover {
+        background: var(--color-tinta-tua);
+    }
+
+    .tombol:active {
+        translate: 1px 1px;
+        box-shadow: 2px 2px 0 var(--color-stabilo);
+    }
+
+    .tombol-garis {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 2px solid var(--color-pensil);
+        border-radius: 0.55rem 0.8rem 0.5rem 0.85rem;
+        background: #fff;
+        padding: 0 1rem;
+        font-weight: 700;
+        color: var(--color-pensil);
+    }
+
+    .tombol-garis:hover {
+        background: var(--color-sticky);
+    }
+
+    .tombol-bahaya {
+        border-color: var(--color-cap);
+        color: var(--color-cap);
+    }
+
+    .tombol-bahaya:hover {
+        background: rgb(192 38 45 / 0.07);
+    }
+
+    .tabel {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9375rem;
+    }
+
+    .tabel th {
+        border-bottom: 2px solid var(--color-pensil);
+        padding: 0.55rem 0.75rem;
+        text-align: left;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .tabel td {
+        border-bottom: 1px solid rgb(37 37 43 / 0.12);
+        padding: 0.65rem 0.75rem;
+        vertical-align: top;
+    }
+
+    .tabel tbody tr:hover {
+        background: rgb(217 235 255 / 0.45);
+    }
+
+    .angka {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .tautan {
+        color: var(--color-tinta);
+        font-weight: 700;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+    }
+
+    .tautan:hover {
+        text-decoration-thickness: 2px;
+    }
+
+    /* Printed reports: plain white paper, black ink, no ruled lines or shadows. */
+    @media print {
+        body {
+            background: #fff;
+            color: #000;
+        }
+
+        .cetak .tabel tbody tr:hover {
+            background: none;
+        }
+
+        .cetak .tabel th,
+        .cetak .tabel td {
+            padding: 0.3rem 0.5rem;
+        }
+
+        @page {
+            margin: 1.5cm;
+        }
+    }
+
+    /* Legal documents: numbered sections, readable lists. */
+    .dokumen h2 {
+        border-bottom: 2px solid var(--color-pensil);
+        padding-bottom: 0.4rem;
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        font-weight: 800;
+        line-height: 1.2;
+        font-stretch: 88%;
+    }
+
+    .dokumen h3 {
+        margin-top: 1.25rem;
+        font-weight: 700;
+    }
+
+    .dokumen p + p,
+    .dokumen p + ul,
+    .dokumen ul + p,
+    .dokumen h2 + p,
+    .dokumen h2 + ul {
+        margin-top: 0.75rem;
+    }
+
+    .dokumen ul {
+        list-style: disc;
+        padding-left: 1.4rem;
+    }
+
+    .dokumen li + li {
+        margin-top: 0.35rem;
+    }
+
+    /* Horizontal snap row for the tutor cards on phones. */
+    .geser {
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+    }
+
+    .geser::-webkit-scrollbar {
+        display: none;
+    }
+
+    .geser > * {
+        scroll-snap-align: start;
+    }
+
+    @media (width >= 40rem) {
+        .geser {
+            scroll-snap-type: none;
+        }
+    }
 }
