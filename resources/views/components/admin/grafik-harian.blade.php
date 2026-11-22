@@ -58,7 +58,7 @@
 
     <details class="mt-3">
         <summary class="tautan inline-block">Lihat sebagai tabel</summary>
-        <div class="mt-2 max-h-72 overflow-y-auto">
+        <div class="mt-2 max-h-72 overflow-auto">
             <table class="tabel">
                 <thead><tr><th scope="col">Tanggal</th><th scope="col" class="text-right">Pesanan</th></tr></thead>
                 <tbody>

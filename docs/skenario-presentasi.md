@@ -4,7 +4,7 @@ Naskah demo sekitar 12–15 menit. Alur utama mengikuti satu les dari awal sampa
 
 ## Persiapan (sebelum presentasi dimulai)
 
-1. Di `.env`: `EDULINK_MODE_DEMO=true`. Kalau lewat ngrok, isi juga `APP_URL` dengan alamat ngrok (lihat README, bagian "Presentasi lewat ngrok").
+1. Di `.env`: `EDULINK_MODE_DEMO=true`. Kalau lewat ngrok, isi juga `APP_URL` dengan alamat ngrok, `EDULINK_TAUTAN_DI_LAYAR=false`, dan `APP_DEBUG=false` (lihat README, bagian "Presentasi lewat ngrok").
 2. `npm run build` (bukan `npm run dev`).
 3. `php artisan serve` (dan `ngrok http 8000` kalau dipakai).
 4. **Pada hari presentasi**, sebelum pukul 22.00: `php artisan edulink:siapkan-demo`, jawab `yes`. Data demo dihitung dari saat ini, jadi ada sesi hari ini, tagihan dengan sisa waktu, dan sesi menunggu konfirmasi.
@@ -122,6 +122,14 @@ Opsional (30 detik): sebagai Andi, buka pesanan itu, isi tautan Google Meet di *
 
 **Jelaskan:** pengajar bimbel EduLink (tutor internal) tidak mendaftar dari nol; mereka mengaktifkan akun di `/aktivasi-tutor`.
 
+Opsional, kalau ingin menunjukkan aktivasi: di `/aktivasi-tutor` masukkan `lestari.putri@edulink.test`, lalu ambil tautannya dari log di terminal (tautan tidak ditampilkan di layar saat presentasi lewat ngrok):
+
+```bash
+grep -oE 'https?://[^"<> ]*/aktivasi-tutor/[^"<> ]*' storage/logs/laravel.log | tail -1 | sed 's/&amp;/\&/g'
+```
+
+Siapkan terminal ini sebelumnya. Tautan aktivasi berlaku 60 menit, jadi kalau ingin menyiapkannya lebih dulu, minta tautannya setelah `siapkan-demo` dan kurang dari satu jam sebelum dipakai.
+
 ---
 
 ## Penutup (±30 detik)
@@ -142,3 +150,4 @@ Opsional (30 detik): sebagai Andi, buka pesanan itu, isi tautan Google Meet di *
 | Ingin menunjukkan konfirmasi otomatis 48 jam | `php artisan edulink:konfirmasi-otomatis --setelah=0`: semua sesi yang menunggu langsung dikonfirmasi sistem. |
 | Ngrok putus atau lambat | Presentasikan dari `http://127.0.0.1:8000` di laptop; ubah `APP_URL` kembali dan jalankan `php artisan optimize:clear`. |
 | Lupa kata sandi akun demo | Semua tutor `tutor12345`, orang tua `orangtua123`, admin `admin12345`. Daftar lengkap dicetak oleh `siapkan-demo`. |
+| Perlu tautan aktivasi atau reset kata sandi | Tautan tidak tampil di layar (`EDULINK_TAUTAN_DI_LAYAR=false`). Ambil dari `storage/logs/laravel.log` dengan perintah di README, bagian "Mengambil tautan dari log email". |

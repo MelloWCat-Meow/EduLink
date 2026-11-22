@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -67,6 +68,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('riwayat_verifikasi_tutor');
+
+        // tarif and lokasi go back to NOT NULL, so profiles still missing them
+        // (drafts, internal tutors before activation) get placeholder values:
+        // 0 and an empty string both read as "not filled in yet".
+        DB::table('profil_tutor')->whereNull('tarif')->update(['tarif' => 0]);
+        DB::table('profil_tutor')->whereNull('lokasi')->update(['lokasi' => '']);
 
         Schema::table('profil_tutor', function (Blueprint $table) {
             $table->dropColumn('riwayat_pendidikan');

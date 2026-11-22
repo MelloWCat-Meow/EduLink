@@ -245,13 +245,13 @@ stateDiagram-v2
     direction LR
     [*] --> belum_dicatat : pesanan dibayar,<br/>sesi mingguan dibuat
     belum_dicatat --> belum_dicatat : jadwal ulang disetujui<br/>(maks. 2 kali per sesi)
-    belum_dicatat --> menunggu_konfirmasi : tutor mencatat<br/>"Terlaksana" atau "Siswa tidak hadir"
+    belum_dicatat --> menunggu_konfirmasi : tutor mencatat Terlaksana<br/>atau Siswa tidak hadir
     belum_dicatat --> dikembalikan : admin membatalkan pesanan
     menunggu_konfirmasi --> dikonfirmasi : orang tua mengonfirmasi
-    menunggu_konfirmasi --> dikonfirmasi_otomatis : 48 jam tanpa jawaban<br/>(edulink:konfirmasi-otomatis)
+    menunggu_konfirmasi --> dikonfirmasi_otomatis : 48 jam tanpa jawaban<br/>(perintah konfirmasi-otomatis)
     menunggu_konfirmasi --> disanggah : orang tua menyanggah<br/>(alasan wajib, keluhan dibuat)
-    disanggah --> dikonfirmasi : admin: sesi sah
-    disanggah --> tidak_sah : admin: sesi tidak sah<br/>(biaya sesi dikembalikan)
+    disanggah --> dikonfirmasi : admin menyatakan sah
+    disanggah --> tidak_sah : admin menyatakan tidak sah<br/>(biaya sesi dikembalikan)
     dikonfirmasi --> [*]
     dikonfirmasi_otomatis --> [*]
     tidak_sah --> [*]
@@ -289,33 +289,33 @@ flowchart LR
         tamu([Pengunjung])
     end
 
-    subgraph App["Aplikasi web EduLink Tutor (Laravel)"]
+    subgraph App[Aplikasi web EduLink Tutor - Laravel]
         direction TB
         cari[Pencarian tutor]
         daftar[Pendaftaran tutor dan aktivasi internal]
         verif[Verifikasi tutor]
         pesan[Pemesanan dan penahanan slot]
         bayar[Pembayaran simulasi + webhook HMAC]
-        sesi[Sesi: tautan meeting, catat, konfirmasi, jadwal ulang]
+        sesi[Sesi - tautan meeting, catat, konfirmasi, jadwal ulang]
         ulas[Ulasan dan moderasi]
         keluh[Keluhan dan sanggahan sesi]
         uang[Saldo, dana ditahan, pencairan, pengembalian]
         notif[Notifikasi dalam aplikasi + email]
-        lapor[Laporan: ringkasan, CSV, cetak]
+        lapor[Laporan - ringkasan, CSV, cetak]
         akun[Akun, peran, persetujuan kebijakan]
     end
 
-    subgraph Terjadwal["Scheduled command (schedule:work)"]
-        lepas[edulink:lepas-penahanan<br/>setiap menit]
-        ulang[edulink:jadwal-ulang-kedaluwarsa<br/>setiap menit]
-        konf[edulink:konfirmasi-otomatis<br/>setiap jam]
-        ingat[edulink:pengingat-sesi<br/>setiap hari 07.00]
+    subgraph Terjadwal[Perintah terjadwal edulink lewat scheduler Laravel]
+        lepas[lepas-penahanan<br/>setiap menit]
+        ulang[jadwal-ulang-kedaluwarsa<br/>setiap menit]
+        konf[konfirmasi-otomatis<br/>setiap jam]
+        ingat[pengingat-sesi<br/>setiap hari 07.00]
     end
 
     db[(MySQL)]
     storage[(Penyimpanan privat<br/>dokumen tutor)]
 
-    subgraph Luar["Layanan luar: disimulasikan atau diganti di Beta"]
+    subgraph Luar[Layanan luar yang disimulasikan atau diganti di Beta]
         gateway[[Payment gateway<br/>→ halaman gateway tiruan]]
         transfer[[Transfer dana bank<br/>→ admin mencatat manual]]
         video[[Layanan video meeting<br/>→ tautan Meet/Zoom dari tutor]]
