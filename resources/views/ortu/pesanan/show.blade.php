@@ -40,7 +40,7 @@
                 @else
                     <ol class="divide-y divide-pensil/12">
                         @foreach ($pesanan->sesi as $sesi)
-                            <li class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 py-3">
+                            <li id="sesi-{{ $sesi->id_sesi }}" class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 py-3">
                                 <div>
                                     <p class="font-bold">Pertemuan {{ $loop->iteration }} · {{ Format::waktu($sesi->waktu, true) }}</p>
                                     @if ($sesi->catatan)
@@ -49,13 +49,16 @@
                                 </div>
                                 <div class="flex flex-wrap items-center gap-3">
                                     @if ($sesi->kehadiran)
-                                        <x-dasbor.label :tone="$sesi->kehadiran === \App\Enums\Kehadiran::Hadir ? 'baik' : 'buruk'">{{ $sesi->kehadiran->label() }}</x-dasbor.label>
-                                    @elseif ($sesi->tautan_meeting && $pesanan->status === StatusPesanan::Dibayar)
-                                        <a href="{{ $sesi->tautan_meeting }}" class="tautan" target="_blank" rel="noopener">Ruang meeting<span class="sr-only"> pertemuan {{ $loop->iteration }}</span></a>
+                                        <x-dasbor.status-sesi :sesi="$sesi" />
+                                    @elseif ($sesi->id_pengembalian)
+                                        <x-dasbor.label>Dikembalikan</x-dasbor.label>
+                                    @elseif ($pesanan->status === StatusPesanan::Dibayar)
+                                        <x-dasbor.tautan-meeting :sesi="$sesi" :pesanan="$pesanan" />
                                     @else
                                         <x-dasbor.label>Belum dicatat</x-dasbor.label>
                                     @endif
                                 </div>
+                                <x-dasbor.konfirmasi-sesi :sesi="$sesi" class="basis-full" />
                                 <x-dasbor.jadwal-ulang :sesi="$sesi" :pesanan="$pesanan" class="basis-full" />
                             </li>
                         @endforeach
@@ -153,7 +156,7 @@
                 </x-dasbor.panel>
             @endif
 
-            <x-dasbor.pengembalian :pengembalian="$pesanan->pengembalianDana" :pesanan="$pesanan" />
+            <x-dasbor.pengembalian :daftar="$pesanan->pengembalian" />
 
             <x-dasbor.panel heading="Riwayat status">
                 <ol class="relative ml-2 border-l-2 border-dashed border-pensil/30">

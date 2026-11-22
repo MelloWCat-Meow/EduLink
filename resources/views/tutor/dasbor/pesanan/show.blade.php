@@ -1,4 +1,5 @@
 @use('App\Support\Format')
+@use('App\Enums\ModeBelajar')
 @use('App\Enums\Kehadiran')
 @use('App\Enums\StatusPesanan')
 
@@ -62,6 +63,22 @@
                 @endif
             </x-dasbor.panel>
 
+            @if ($pesanan->mode === ModeBelajar::Online && $pesanan->status === StatusPesanan::Dibayar)
+                <x-dasbor.panel heading="Tautan meeting" heading-id="tautan-meeting">
+                    <p class="text-[0.9375rem]">Bagikan tautan Google Meet, Zoom, atau layanan lain yang Anda pakai. Tautan ini berlaku untuk semua sesi, kecuali sesi yang diberi tautan sendiri.</p>
+                    <form method="post" action="{{ route('tutor.pesanan.tautan', $pesanan) }}" class="mt-3 flex flex-wrap items-end gap-3" novalidate>
+                        @csrf
+                        @method('PUT')
+                        <x-dasbor.field name="tautan_meeting" label="Tautan meeting pesanan" class="min-w-0 flex-1">
+                            <input id="isian-tautan_meeting" type="url" name="tautan_meeting" inputmode="url" maxlength="255" placeholder="https://meet.google.com/abc-defg-hij"
+                                value="{{ old('untuk_sesi') ? $pesanan->tautan_meeting : old('tautan_meeting', $pesanan->tautan_meeting) }}" class="kontrol"
+                                @error('tautan_meeting') aria-invalid="true" aria-describedby="isian-tautan_meeting-galat" @enderror>
+                        </x-dasbor.field>
+                        <button type="submit" class="tombol">{{ $pesanan->tautan_meeting ? 'Simpan perubahan' : 'Bagikan tautan' }}</button>
+                    </form>
+                </x-dasbor.panel>
+            @endif
+
             <x-dasbor.panel heading="Sesi">
                 @if ($pesanan->sesi->isEmpty())
                     <x-dasbor.kosong :message="$pesanan->status->isFinal() ? 'Pesanan ini tidak punya sesi.' : 'Jadwal sesi dibuat setelah pembayaran berhasil.'" />
@@ -76,13 +93,28 @@
                                     @endif
                                 </div>
                                 @if ($sesi->kehadiran)
-                                    <x-dasbor.label :tone="$sesi->kehadiran === Kehadiran::Hadir ? 'baik' : 'buruk'">{{ $sesi->kehadiran->label() }}</x-dasbor.label>
+                                    <x-dasbor.status-sesi :sesi="$sesi" />
                                 @elseif ($pesanan->status === StatusPesanan::Dibayar && $sesi->waktu->isPast())
                                     <a href="{{ route('tutor.sesi.index') }}#sesi-{{ $sesi->id_sesi }}" class="tombol-garis min-h-10">Catat<span class="sr-only"> pertemuan {{ $loop->iteration }}</span></a>
-                                @elseif ($sesi->tautan_meeting && $pesanan->status === StatusPesanan::Dibayar)
-                                    <a href="{{ $sesi->tautan_meeting }}" class="tautan" target="_blank" rel="noopener">Ruang meeting<span class="sr-only"> pertemuan {{ $loop->iteration }}</span></a>
+                                @elseif ($pesanan->status === StatusPesanan::Dibayar)
+                                    <x-dasbor.tautan-meeting :sesi="$sesi" :pesanan="$pesanan" untuk-tutor />
                                 @else
                                     <x-dasbor.label>Belum dimulai</x-dasbor.label>
+                                @endif
+                                @if ($pesanan->mode === ModeBelajar::Online && $pesanan->status === StatusPesanan::Dibayar && ! $sesi->kehadiran)
+                                    <details class="basis-full text-[0.9375rem]" @if ($errors->has('tautan_meeting') && old('untuk_sesi') === $sesi->id_sesi) open @endif>
+                                        <summary class="tautan inline-flex min-h-11 list-none items-center">{{ $sesi->tautan_meeting ? 'Ubah tautan khusus sesi ini' : 'Pakai tautan lain untuk sesi ini' }}</summary>
+                                        <form method="post" action="{{ route('tutor.sesi.tautan', $sesi) }}" class="mt-1 flex flex-wrap items-end gap-2" novalidate>
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="untuk_sesi" value="{{ $sesi->id_sesi }}">
+                                            <label class="min-w-0 flex-1"><span class="block font-bold">Tautan sesi {{ $loop->iteration }}</span>
+                                                <input type="url" name="tautan_meeting" value="{{ $sesi->tautan_meeting }}" maxlength="255" inputmode="url" placeholder="https://zoom.us/j/..." class="kontrol">
+                                            </label>
+                                            <button type="submit" class="tombol-garis">Simpan</button>
+                                        </form>
+                                        <p class="mt-1 text-pensil-muda">Kosongkan lalu simpan untuk kembali memakai tautan pesanan.</p>
+                                    </details>
                                 @endif
                                 <x-dasbor.jadwal-ulang :sesi="$sesi" :pesanan="$pesanan" class="basis-full" />
                             </li>
@@ -104,7 +136,7 @@
         <div class="space-y-8">
             @include('tutor.dasbor.pesanan._kontak')
 
-            <x-dasbor.pengembalian :pengembalian="$pesanan->pengembalianDana" :pesanan="$pesanan" />
+            <x-dasbor.pengembalian :daftar="$pesanan->pengembalian" />
 
             <x-dasbor.panel heading="Riwayat status">
                 <ol class="space-y-3">

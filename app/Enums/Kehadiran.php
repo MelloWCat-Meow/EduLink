@@ -10,8 +10,9 @@ enum Kehadiran: string
     public function label(): string
     {
         return match ($this) {
-            self::Hadir => 'Hadir',
-            self::TidakHadir => 'Tidak hadir',
+            // A session the tutor turned up for; an absent student without notice still counts as held.
+            self::Hadir => 'Terlaksana',
+            self::TidakHadir => 'Siswa tidak hadir',
         };
     }
 }

@@ -45,13 +45,13 @@ class PesananTutorController extends Controller
             'siswa.wali', 'mapel', 'jadwal', 'komisi', 'ulasan',
             'sesi' => fn ($sesi) => $sesi->orderBy('waktu')->with('permintaanJadwalUlang'),
             'keluhan' => fn ($keluhan) => $keluhan->where('id_akun', $request->user()->id_akun)->latest(),
-            'pengembalianDana',
+            'pengembalian' => fn ($pengembalian) => $pengembalian->withCount('sesi')->oldest(),
             'riwayat' => fn ($riwayat) => $riwayat->with('akun')->orderBy('dicatat_pada')->orderBy('id'),
         ]);
 
         return view('tutor.dasbor.pesanan.show', [
             'pesanan' => $pesanan,
-            'pilihanKeluhan' => JenisKeluhan::cases(),
+            'pilihanKeluhan' => JenisKeluhan::pilihanFormulir(),
             'kontak' => $kontakWhatsApp->untuk($request->user(), $pesanan),
         ]);
     }

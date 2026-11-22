@@ -1,8 +1,9 @@
 @use('App\Support\Format')
+@use('App\Enums\ModeBelajar')
 @use('App\Enums\Kehadiran')
 
 <x-dasbor.layout title="Sesi">
-    <x-dasbor.judul title="Sesi" note="catat kehadiran setelah sesi dimulai; pesanan selesai otomatis saat semua sesi tercatat" />
+    <x-dasbor.judul title="Sesi" note="catat sesi setelah dimulai; orang tua mengonfirmasi dalam 48 jam, lalu bagian Anda masuk saldo" />
 
     <div class="space-y-8">
         <x-dasbor.panel heading="Perlu dicatat">
@@ -21,7 +22,7 @@
                             <form method="post" action="{{ route('tutor.sesi.catat', $sesi) }}" class="space-y-3" novalidate>
                                 @csrf
                                 <fieldset>
-                                    <legend class="sr-only">Kehadiran sesi {{ $sesi->id_sesi }}</legend>
+                                    <legend class="font-bold">Bagaimana sesinya?</legend>
                                     <div class="flex flex-wrap gap-2">
                                         @foreach ($pilihanKehadiran as $pilihan)
                                             <label class="flex min-h-11 items-center gap-2 rounded-md border-2 border-pensil/20 px-3 has-[:checked]:border-tinta has-[:checked]:bg-langit/50">
@@ -31,8 +32,9 @@
                                         @endforeach
                                     </div>
                                 </fieldset>
-                                <label for="{{ $idForm }}-catatan" class="block text-[0.9375rem] font-bold">Catatan hasil sesi <span class="font-normal text-pensil-muda">(dibaca orang tua)</span></label>
+                                <label for="{{ $idForm }}-catatan" class="block text-[0.9375rem] font-bold">Catatan materi <span class="font-normal text-pensil-muda">(dibaca orang tua)</span></label>
                                 <textarea id="{{ $idForm }}-catatan" name="catatan" rows="2" maxlength="1000" class="kontrol" placeholder="Materi yang dibahas, PR, atau hal yang perlu diulang."></textarea>
+                                <p class="text-[0.875rem] text-pensil-muda">"Siswa tidak hadir" berarti Anda datang atau membuka ruang meeting, tetapi siswa tidak hadir tanpa kabar; sesi tetap dihitung terlaksana. Kalau Anda yang berhalangan, jangan catat sesi ini: ajukan jadwal ulang dari <a href="{{ route('tutor.pesanan.show', $sesi->id_pesanan) }}" class="tautan">detail pesanan</a>.</p>
                                 <button type="submit" class="tombol">Simpan catatan<span class="sr-only"> sesi {{ $sesi->id_sesi }}</span></button>
                             </form>
                         </li>
@@ -55,10 +57,9 @@
                                     <td>{{ $sesi->pesanan->mapel->label() }}</td>
                                     <td>{{ $sesi->pesanan->siswa->nama }}</td>
                                     <td>
-                                        @if ($sesi->tautan_meeting)
-                                            <a href="{{ $sesi->tautan_meeting }}" target="_blank" rel="noopener" class="tautan">Ruang meeting</a>
-                                        @else
-                                            Kunjungan rumah
+                                        <x-dasbor.tautan-meeting :sesi="$sesi" :pesanan="$sesi->pesanan" untuk-tutor />
+                                        @if ($sesi->pesanan->mode === ModeBelajar::Online && ! $sesi->tautanBerlaku())
+                                            <a href="{{ route('tutor.pesanan.show', $sesi->id_pesanan) }}#tautan-meeting" class="tautan block">Isi tautan</a>
                                         @endif
                                     </td>
                                 </tr>
@@ -75,13 +76,13 @@
             @else
                 <div class="overflow-x-auto">
                     <table class="tabel">
-                        <thead><tr><th scope="col">Waktu</th><th scope="col">Mapel dan siswa</th><th scope="col">Kehadiran</th><th scope="col">Catatan</th></tr></thead>
+                        <thead><tr><th scope="col">Waktu</th><th scope="col">Mapel dan siswa</th><th scope="col">Status</th><th scope="col">Catatan</th></tr></thead>
                         <tbody>
                             @foreach ($tercatat as $sesi)
                                 <tr>
                                     <td class="whitespace-nowrap">{{ Format::waktu($sesi->waktu) }}</td>
                                     <td>{{ $sesi->pesanan->mapel->label() }} · {{ $sesi->pesanan->siswa->nama }}</td>
-                                    <td><x-dasbor.label :tone="$sesi->kehadiran === Kehadiran::Hadir ? 'baik' : 'buruk'">{{ $sesi->kehadiran->label() }}</x-dasbor.label></td>
+                                    <td><x-dasbor.status-sesi :sesi="$sesi" /></td>
                                     <td class="min-w-[14rem]">{{ $sesi->catatan ?: '–' }}</td>
                                 </tr>
                             @endforeach

@@ -107,7 +107,9 @@ class NotifikasiTest extends TestCase
 
         $this->alur()->catatKehadiran($sesi, Kehadiran::Hadir, 'Bab pecahan.', oleh: $this->akunTutor);
 
-        Notification::assertSentTo($this->ortu, Pemberitahuan::class, fn (Pemberitahuan $n, array $channels) => $n->jenis === JenisNotifikasi::SesiDicatat && str_contains($n->pesan, 'Bab pecahan.') && $channels === ['database']);
+        // The parent is asked to confirm or dispute, in the app and by email, with the session id for the inline button.
+        Notification::assertSentTo($this->ortu, Pemberitahuan::class, fn (Pemberitahuan $n, array $channels) => $n->jenis === JenisNotifikasi::SesiDicatat
+            && str_contains($n->pesan, 'Bab pecahan.') && str_contains($n->pesan, 'sebelum') && $n->tambahan === ['id_sesi' => $sesi->id_sesi] && $channels === ['database', 'mail']);
         $this->assertTidakTerkirim($this->akunTutor, JenisNotifikasi::SesiDicatat);
     }
 

@@ -51,11 +51,7 @@
                     @foreach ($sesiDekat as $sesi)
                         <li class="flex flex-wrap items-center justify-between gap-2 bg-white/70 px-3 py-2">
                             <span><span class="font-bold">{{ $sesi->waktu->isToday() ? 'Hari ini' : 'Besok' }}, {{ Format::jam($sesi->waktu) }}</span> · {{ $sesi->pesanan->mapel->label() }} · {{ $sesi->pesanan->siswa->nama }}</span>
-                            @if ($sesi->tautan_meeting)
-                                <a href="{{ $sesi->tautan_meeting }}" target="_blank" rel="noopener" class="tautan">Ruang meeting</a>
-                            @else
-                                <span class="text-[0.875rem] text-pensil-muda">Kunjungan rumah</span>
-                            @endif
+                            <x-dasbor.tautan-meeting :sesi="$sesi" :pesanan="$sesi->pesanan" untuk-tutor />
                         </li>
                     @endforeach
                 </ul>
@@ -66,6 +62,9 @@
             <x-dasbor.panel heading="Saldo">
                 <p class="angka font-display text-[2rem] font-extrabold">{{ Format::rupiah($saldo['saldo']) }}</p>
                 <p class="text-[0.9375rem] text-pensil-muda">tersedia untuk dicairkan</p>
+                @if (bccomp($saldo['ditahan'], '0', 2) === 1)
+                    <p class="mt-2 text-[0.9375rem]"><span class="angka font-bold">{{ Format::rupiah($saldo['ditahan']) }}</span> ditahan sampai sesinya dikonfirmasi orang tua.</p>
+                @endif
                 <a href="{{ route('tutor.pendapatan.index') }}" class="tautan mt-3 inline-block">Rincian dan pencairan</a>
             </x-dasbor.panel>
 

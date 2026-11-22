@@ -23,7 +23,8 @@
                                 <td class="angka text-right font-bold">{{ Format::rupiah($pencairan->nominal) }}</td>
                                 <td class="angka text-right">
                                     {{ Format::rupiah($s['saldo']) }}
-                                    <span class="block text-[0.8125rem] font-normal text-pensil-muda">{{ Format::rupiah($s['pendapatan']) }} − {{ Format::rupiah($s['komisi']) }} − {{ Format::rupiah($s['dicairkan']) }}</span>
+                                    <span class="block text-[0.8125rem] font-normal text-pensil-muda">sesi dikonfirmasi {{ Format::rupiah($s['bagian']) }} − dicairkan {{ Format::rupiah($s['dicairkan']) }}</span>
+                                    <span class="block text-[0.8125rem] font-normal text-pensil-muda">ditahan {{ Format::rupiah($s['ditahan']) }}</span>
                                 </td>
                                 <td><x-dasbor.label :tone="$pencairan->status->tone()">{{ $pencairan->status->label() }}</x-dasbor.label></td>
                                 <td>

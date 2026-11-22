@@ -18,6 +18,30 @@
             <p class="mt-5 border-t-2 border-dashed border-pensil/25 pt-4">{{ $keluhan->deskripsi }}</p>
         </x-dasbor.panel>
 
+        @if ($keluhan->sesi && $keluhan->sesi->status_konfirmasi === \App\Enums\StatusKonfirmasiSesi::Disanggah)
+        <x-dasbor.panel heading="Putuskan sanggahan sesi" heading-id="putusan">
+            @php($sesi = $keluhan->sesi)
+            <dl class="space-y-2 text-[0.9375rem]">
+                <div><dt class="text-pensil-muda">Sesi</dt><dd class="font-bold">{{ $sesi->id_sesi }} · {{ Format::waktu($sesi->waktu, true) }}</dd></div>
+                <div><dt class="text-pensil-muda">Dicatat tutor</dt><dd><x-dasbor.status-sesi :sesi="$sesi" /> pada {{ Format::waktu($sesi->dicatat_pada) }}</dd></div>
+                <div><dt class="text-pensil-muda">Catatan materi dari tutor</dt><dd>{{ $sesi->catatan ?: '–' }}</dd></div>
+                <div><dt class="text-pensil-muda">Alasan sanggahan orang tua</dt><dd>{{ $sesi->alasan_sanggahan }}</dd></div>
+            </dl>
+            <form method="post" action="{{ route('admin.keluhan.putusan', $keluhan) }}" class="mt-5 space-y-4 border-t-2 border-dashed border-pensil/25 pt-4" novalidate>
+                @csrf
+                <fieldset @error('keputusan') aria-describedby="isian-keputusan-galat" @enderror>
+                    <legend class="font-bold">Keputusan</legend>
+                    <label class="mt-1 flex min-h-11 items-start gap-2"><input type="radio" name="keputusan" value="sah" class="mt-1 size-5 accent-tinta" @checked(old('keputusan') === 'sah')><span><span class="font-bold">Sesi sah.</span> Bagian tutor untuk sesi ini dibayarkan.</span></label>
+                    <label class="flex min-h-11 items-start gap-2"><input type="radio" name="keputusan" value="tidak_sah" class="mt-1 size-5 accent-tinta" @checked(old('keputusan') === 'tidak_sah')><span><span class="font-bold">Sesi tidak sah.</span> Biaya sesi ini dikembalikan ke orang tua; tutor tidak dibayar untuk sesi ini.</span></label>
+                    <x-dasbor.koreksi name="keputusan" />
+                </fieldset>
+                <x-dasbor.field name="alasan" label="Alasan" hint="Wajib. Dikirim ke orang tua dan tutor.">
+                    <textarea id="isian-alasan" name="alasan" rows="3" maxlength="255" class="kontrol" aria-describedby="isian-alasan-petunjuk @error('alasan') isian-alasan-galat @enderror" @error('alasan') aria-invalid="true" @enderror>{{ old('alasan') }}</textarea>
+                </x-dasbor.field>
+                <button type="submit" class="tombol">Simpan keputusan</button>
+            </form>
+        </x-dasbor.panel>
+        @else
         <x-dasbor.panel heading="Tanggapan">
             @if ($keluhan->status === StatusKeluhan::Selesai)
                 <p class="bg-langit/50 px-3 py-2">{{ $keluhan->tanggapan_admin }}</p>
@@ -42,5 +66,6 @@
                 </form>
             @endif
         </x-dasbor.panel>
+        @endif
     </div>
 </x-dasbor.layout>

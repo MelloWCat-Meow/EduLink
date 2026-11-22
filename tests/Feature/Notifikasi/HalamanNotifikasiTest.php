@@ -3,17 +3,20 @@
 namespace Tests\Feature\Notifikasi;
 
 use App\Enums\JenisNotifikasi;
+use App\Enums\Kehadiran;
 use App\Models\AkunPengguna;
 use App\Models\Tutor;
 use App\Notifications\Pemberitahuan;
+use App\Services\AlurPesanan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\TestWith;
+use Tests\Concerns\MembuatPesanan;
 use Tests\TestCase;
 
 class HalamanNotifikasiTest extends TestCase
 {
-    use RefreshDatabase;
+    use MembuatPesanan, RefreshDatabase;
 
     private function beri(AkunPengguna $akun, string $judul, ?string $tautan = null): void
     {
@@ -91,5 +94,22 @@ class HalamanNotifikasiTest extends TestCase
         $this->assertSame(['siti@contoh.com' => $ortu->nama], $ortu->routeNotificationForMail());
         $this->assertSame('Pesanan diterima', $mail->subject);
         $this->assertSame(1, $ortu->notifications()->count());
+    }
+
+    public function test_a_logged_session_can_be_confirmed_right_from_the_notification(): void
+    {
+        $pesanan = $this->pesananDibayar();
+        $sesi = $pesanan->sesi()->orderBy('waktu')->firstOrFail();
+        app(AlurPesanan::class)->catatKehadiran($sesi, Kehadiran::Hadir, periksaWaktu: false);
+        $ortu = $pesanan->siswa->wali;
+
+        $this->actingAs($ortu)->get(route('notifikasi.index'))
+            ->assertSee('action="'.route('sesi.konfirmasi', $sesi->id_sesi).'"', false)
+            ->assertSeeText('Sanggah');
+
+        $this->actingAs($ortu)->post(route('sesi.konfirmasi', $sesi->id_sesi));
+
+        // Once confirmed, the button is gone from the notification.
+        $this->actingAs($ortu)->get(route('notifikasi.index'))->assertDontSee('action="'.route('sesi.konfirmasi', $sesi->id_sesi).'"', false);
     }
 }

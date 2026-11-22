@@ -22,14 +22,26 @@
                 @else
                     <div class="overflow-x-auto">
                         <table class="tabel">
-                            <thead><tr><th scope="col">Sesi</th><th scope="col">Waktu</th><th scope="col">Kehadiran</th><th scope="col">Catatan</th></tr></thead>
+                            <thead><tr><th scope="col">Sesi</th><th scope="col">Waktu</th><th scope="col">Status</th><th scope="col">Catatan</th></tr></thead>
                             <tbody>
                                 @foreach ($pesanan->sesi as $sesi)
                                     <tr>
                                         <td class="angka">{{ $sesi->id_sesi }}</td>
                                         <td class="whitespace-nowrap">{{ Format::waktu($sesi->waktu) }}</td>
-                                        <td>{{ $sesi->kehadiran?->label() ?? 'Belum dicatat' }}</td>
-                                        <td>{{ $sesi->catatan ?? '–' }}</td>
+                                        <td>
+                                            @if ($sesi->kehadiran)
+                                                <x-dasbor.status-sesi :sesi="$sesi" />
+                                            @elseif ($sesi->id_pengembalian)
+                                                Dikembalikan ke orang tua
+                                            @else
+                                                Belum dicatat
+                                            @endif
+                                        </td>
+                                        <td>
+                                            {{ $sesi->catatan ?? '–' }}
+                                            @if ($sesi->alasan_sanggahan)<span class="block text-[0.875rem]"><span class="font-bold">Sanggahan:</span> {{ $sesi->alasan_sanggahan }}</span>@endif
+                                            @if ($sesi->keputusan_admin)<span class="block text-[0.875rem]"><span class="font-bold">Keputusan:</span> {{ $sesi->keputusan_admin }}</span>@endif
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -92,7 +104,7 @@
                 </ol>
             </x-dasbor.panel>
 
-            <x-dasbor.pengembalian :pengembalian="$pesanan->pengembalianDana" :pesanan="$pesanan" />
+            <x-dasbor.pengembalian :daftar="$pesanan->pengembalian" />
 
             @unless ($pesanan->status->isFinal())
                 <x-dasbor.panel heading="Batalkan pesanan">

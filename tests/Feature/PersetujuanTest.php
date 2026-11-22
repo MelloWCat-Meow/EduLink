@@ -27,7 +27,11 @@ class PersetujuanTest extends TestCase
             ->assertSeeText('Tutor menjawab (menerima atau menolak) dalam 24 jam.')
             ->assertSeeText('Penjadwalan ulang sesi')
             ->assertSeeText('Pengembalian dana')
-            ->assertSeeText('Larangan bertransaksi di luar platform');
+            ->assertSeeText('Larangan bertransaksi di luar platform')
+            ->assertSeeText('48 jam')
+            ->assertSeeText('Dana ditahan sampai sesi dikonfirmasi.')
+            ->assertSeeText('Siswa tidak hadir berarti tutor sudah datang')
+            ->assertSeeText('sesi tidak sah');
 
         $this->get(route('landing'))->assertSee(route('syarat'), false)->assertSee(route('privacy'), false);
         $this->actingAs(AkunPengguna::factory()->ortu()->create())->get(route('beranda'))->assertSee(route('syarat'), false);
