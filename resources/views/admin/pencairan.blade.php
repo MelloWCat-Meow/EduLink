@@ -2,7 +2,7 @@
 @use('App\Enums\StatusPencairan')
 
 <x-dasbor.layout title="Pencairan dana">
-    <x-dasbor.judul title="Pencairan dana" note="saldo = pembayaran berhasil − komisi − pencairan yang sudah disetujui atau dibayar" />
+    <x-dasbor.judul title="Pencairan dana" note="saldo tersedia = bagian tutor dari sesi yang sudah dikonfirmasi − pencairan yang disetujui atau dibayar" />
 
     <x-dasbor.panel>
         @if ($daftarPencairan->isEmpty())

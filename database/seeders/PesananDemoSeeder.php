@@ -47,6 +47,9 @@ class PesananDemoSeeder extends Seeder
 
     public function run(): void
     {
+        // The clock before seeding: frozen in tests, null in a normal run. It is
+        // put back at the end, so a test can check the data against "now".
+        $jamSebelumnya = Carbon::getTestNow();
         $this->sekarang = now()->startOfMinute();
 
         $siti = AkunPengguna::query()->where('kontak', 'siti.aminah@edulink.test')->firstOrFail();
@@ -130,11 +133,14 @@ class PesananDemoSeeder extends Seeder
 
         $this->pencairan('Fadli Ramadhan', $this->hariLalu(25), 400000, StatusPencairan::Dibayar);
         $this->pencairan('Rina Marlina', $this->hariLalu(20), 250000, StatusPencairan::Dibayar);
-        $this->pencairan('Rina Marlina', $this->hariLalu(1), 300000, StatusPencairan::Menunggu);
+        // Waiting for the admin. Not Rina's: in the presentation she logs a
+        // session and then asks for a payout herself, and a tutor may have only
+        // one request waiting.
+        $this->pencairan('Yusuf Hidayat', $this->hariLalu(1), 300000, StatusPencairan::Menunggu);
         $this->pencairan('Andi Pratama', $this->hariLalu(15), 150000, StatusPencairan::Dibayar);
         $this->pencairan('Dewi Anggraini', $this->hariLalu(5), 150000, StatusPencairan::Disetujui);
 
-        Carbon::setTestNow();
+        Carbon::setTestNow($jamSebelumnya);
     }
 
     /**
@@ -196,14 +202,29 @@ class PesananDemoSeeder extends Seeder
     }
 
     /**
-     * Dewi's dashboard: a paid order with a session tomorrow (for the
-     * day-before reminder), plus finished, rejected, waiting orders.
+     * Dewi's dashboard: paid orders with a session later today and one
+     * tomorrow (for the day-before reminder), plus finished, rejected,
+     * waiting orders.
      */
     private function dasborDewi(Siswa $raka, Siswa $dimas, AkunPengguna $siti, AkunPengguna $budi): void
     {
         $dewi = $this->akunTutor('Dewi Anggraini');
         $besok = Hari::fromIsoWeekday($this->sekarang->copy()->addDay()->isoWeekday());
         Tutor::query()->where('nama', 'Dewi Anggraini')->firstOrFail()->jadwal()->create(['hari' => $besok, 'jam' => '17:00:00', 'status' => 'tersedia']);
+
+        // A session later today, so "Sesi hari ini" always has something on
+        // whatever day the demo is prepared. Half past the next hour keeps it
+        // clear of the fixed slots, which are all on the hour. Skipped after
+        // 22:59, when "later today" no longer exists.
+        $jamHariIni = $this->sekarang->hour + 1;
+        if ($jamHariIni <= 23) {
+            $hariIni = Hari::fromIsoWeekday($this->sekarang->isoWeekday());
+            $jam = sprintf('%02d:30:00', $jamHariIni);
+            Tutor::query()->where('nama', 'Dewi Anggraini')->firstOrFail()->jadwal()->create(['hari' => $hariIni, 'jam' => $jam, 'status' => 'tersedia']);
+            $hariIniPesanan = $this->pesan($raka, $siti, 'Dewi Anggraini', 'IPA-SMP', $hariIni, ModeBelajar::Online, 60, 4, $this->hariLalu(3), $jam);
+            $this->terimaDanBayar($hariIniPesanan, MetodePembayaran::EWallet);
+            $hariIniPesanan->forceFill(['tautan_meeting' => 'https://meet.google.com/edu-link-ipa'])->save();
+        }
 
         $selesai = $this->pesan($raka, $siti, 'Dewi Anggraini', 'IPA-SMP', Hari::Senin, ModeBelajar::Online, 60, 4, $this->hariLalu(50));
         $this->jalankanSampaiSelesai($selesai);

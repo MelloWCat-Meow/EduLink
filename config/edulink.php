@@ -28,6 +28,13 @@ return [
         ?? in_array(env('APP_ENV', 'production'), ['local', 'testing'], true),
 
     /*
+    | Shown in the landing and dashboard footers, so viewers know this is a
+    | preview build.
+    */
+
+    'versi' => 'v0.9 Beta',
+
+    /*
     | Version of the Terms (/syarat-ketentuan) and Privacy Policy
     | (/kebijakan-privasi) a new account agrees to. Change it whenever either
     | document changes; it is stored in akun_pengguna.versi_kebijakan.

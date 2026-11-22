@@ -91,6 +91,7 @@ return new class extends Migration
 
         Schema::table('sesi_pembelajaran', function (Blueprint $table) {
             $table->dropForeign(['id_pengembalian']);
+            $table->dropIndex(['status_konfirmasi']);
             $table->dropColumn(['status_konfirmasi', 'dicatat_pada', 'dikonfirmasi_pada', 'dikonfirmasi_oleh', 'alasan_sanggahan', 'keputusan_admin', 'id_pengembalian']);
         });
     }

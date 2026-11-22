@@ -13,9 +13,18 @@
 
 return [
 
+    /*
+    | Shown in the landing footer. An empty value hides its line. The WhatsApp
+    | number is kept as digits in international form (62...) for wa.me, so
+    | "0812-..." and "+62 812-..." both work.
+    */
     'contact' => [
-        'whatsapp' => env('EDULINK_WHATSAPP'),
-        'address' => env('EDULINK_ADDRESS'),
+        'whatsapp' => (function (): ?string {
+            $angka = preg_replace('/\D/', '', (string) env('EDULINK_WHATSAPP'));
+
+            return $angka === '' ? null : preg_replace('/^0/', '62', $angka);
+        })(),
+        'address' => trim((string) env('EDULINK_ADDRESS')) ?: null,
     ],
 
     /**

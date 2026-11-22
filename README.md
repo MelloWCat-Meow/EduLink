@@ -59,15 +59,38 @@ Email (tautan aktivasi, reset kata sandi, notifikasi penting) memakai mailer `lo
 
 Pembayaran disimulasikan: tidak ada payment gateway sungguhan yang tersambung. Sesi online memakai tautan Google Meet, Zoom, atau layanan lain milik tutor sendiri, yang dibagikan tutor dari detail pesanan; EduLink tidak menjalankan layanan video. Mode demo diatur lewat `EDULINK_MODE_DEMO` di `.env`:
 
-- Kosong: aktif kalau `APP_ENV` bernilai `local` atau `testing`, mati di environment lain.
-- `true`: aktif di mana saja, termasuk hosting dengan `APP_ENV=production` untuk presentasi.
-- `false`: mati.
+- Kosong, tidak diisi, atau nilai yang tidak dikenali: aktif kalau `APP_ENV` bernilai `local` atau `testing`, mati di environment lain.
+- `true`, `1`, `on`, atau `yes`: aktif di mana saja, termasuk hosting atau ngrok dengan `APP_ENV=production` untuk presentasi.
+- `false`, `0`, `off`, atau `no`: mati.
+
+Test selalu berjalan dengan mode demo aktif (diatur di `phpunit.xml`), apa pun isi `.env` Anda.
 
 Selama mode demo aktif:
 
 - Tombol **Bayar** membuka halaman gateway tiruan dengan pilihan Berhasil atau Gagal. Hasilnya dikirim ke `POST /webhooks/payment` dengan tanda tangan HMAC.
 - Tautan aktivasi tutor internal dan tautan reset kata sandi juga ditampilkan di layar dengan label "Mode demo", karena tidak ada kotak masuk sungguhan.
 - Perintah `edulink:simulasi-tutor` dan `edulink:simulasi-sesi` tersedia untuk demo cepat.
+
+## Menyiapkan presentasi
+
+Sebelum presentasi, siapkan ulang data demo:
+
+```bash
+php artisan edulink:siapkan-demo
+```
+
+Perintah ini hanya berjalan di mode demo dan meminta konfirmasi, karena menghapus seluruh isi database. Isinya: `migrate:fresh --seed`, menghapus berkas dokumen tutor contoh yang lama, membersihkan cache, lalu mencetak akun demo dan alamat halaman penting. Tanggal di data demo dihitung dari saat perintah dijalankan, sehingga selalu ada sesi hari ini, tagihan yang masih punya sisa waktu bayar, dan sesi yang menunggu konfirmasi orang tua. Jalankan pada hari presentasi, sebaiknya sebelum pukul 22.00 (setelah itu sesi "hari ini" tidak dibuat).
+
+Naskah demo langkah demi langkah ada di [docs/skenario-presentasi.md](docs/skenario-presentasi.md).
+
+### Presentasi lewat ngrok
+
+1. Jalankan `php artisan serve`, lalu `ngrok http 8000`.
+2. Di `.env`, isi `APP_URL` dengan alamat `https://....ngrok-free.app` dari ngrok, dan `EDULINK_MODE_DEMO=true`. Alamat ngrok gratis berubah setiap kali ngrok dijalankan ulang, jadi perbarui `APP_URL` setiap kali.
+3. Jalankan `npm run build`, **bukan** `npm run dev`. Selama dev server Vite berjalan, CSS dan JS diambil dari `localhost:5173`, yang tidak bisa dibuka dari perangkat lain, sehingga halaman tampil tanpa gaya.
+4. Jalankan `php artisan optimize:clear` (atau `edulink:siapkan-demo`) supaya perubahan `.env` terbaca.
+
+Aplikasi mempercayai header `X-Forwarded-*` hanya dari proxy di mesin yang sama (`127.0.0.1`), yaitu agen ngrok, sehingga tautan, CSS, dan JS memakai `https`.
 
 ## Akun demo
 
@@ -76,9 +99,10 @@ Selama mode demo aktif:
 | Admin | admin@edulink.test | admin12345 | Admin Dewi Lestari |
 | Orang tua | siti.aminah@edulink.test | orangtua123 | Anak: Nadia (SD) dan Raka (SMP); punya pesanan di semua status |
 | Orang tua | budi.santoso@edulink.test | orangtua123 | Anak: Dimas (SMA) |
-| Tutor terverifikasi | rina.marlina@edulink.test | tutor12345 | Permintaan baru, sesi lewat yang belum dicatat (pesanan online tanpa tautan meeting), sesi yang disanggah dan menunggu admin, saldo tersedia, dana ditahan, dan pencairan menunggu |
+| Tutor terverifikasi | rina.marlina@edulink.test | tutor12345 | Permintaan baru, sesi lewat yang belum dicatat (pesanan online tanpa tautan meeting), sesi yang disanggah dan menunggu admin, saldo tersedia, dan dana ditahan; tidak ada pencairan menunggu, jadi bisa mengajukan saat demo |
 | Tutor terverifikasi | andi.pratama@edulink.test | tutor12345 | Pesanan di semua status, sesi kemarin yang menunggu konfirmasi Budi, tautan Meet sudah diisi, saldo tersedia tanpa pengajuan menunggu |
-| Tutor terverifikasi | dewi.anggraini@edulink.test | tutor12345 | Sesi yang dikonfirmasi otomatis, sesi besok dengan tautan Zoom khusus (untuk pengingat H-1) |
+| Tutor terverifikasi | dewi.anggraini@edulink.test | tutor12345 | Sesi hari ini (satu jam lagi saat data disiapkan), sesi yang dikonfirmasi otomatis, sesi besok dengan tautan Zoom khusus (untuk pengingat H-1) |
+| Tutor internal | yusuf.hidayat@edulink.test | tutor12345 | Pengajuan pencairan Rp300.000 yang menunggu persetujuan admin |
 | Tutor menunggu verifikasi | nurul.aisyah@edulink.test, bayu.firmansyah@edulink.test | tutor12345 | Halaman "Sedang diperiksa" |
 | Tutor perlu perbaikan | intan.permata@edulink.test | tutor12345 | KTP ditolak dan profil diberi catatan |
 | Tutor draf | galih.prakoso@edulink.test | tutor12345 | Pendaftaran belum dikirim |
@@ -96,8 +120,8 @@ Semua langkah lewat tampilan, tanpa perintah simulasi. Pakai dua jendela browser
 6. **Tutor mencatat sesi.** Masuk sebagai Rina, buka **Sesi**. Ada sesi IPA SD Nadia yang sudah lewat dan belum dicatat. Pilih **Terlaksana** (atau **Siswa tidak hadir**), tulis catatan materi, lalu simpan. Sesi menunggu konfirmasi orang tua, dan bagian Rina untuk sesi itu tampil sebagai **Dana ditahan** di **Pendapatan**.
 7. **Orang tua mengonfirmasi atau menyanggah.** Sebagai Siti, buka Beranda: kartu "Sesi menunggu konfirmasi Anda" menampilkan sisa waktunya. Klik **Konfirmasi sesi** (bisa juga langsung dari halaman notifikasi), atau **Sanggah** dengan alasan. Setelah dikonfirmasi, bagian Rina pindah dari dana ditahan ke **saldo tersedia**. Pesanan baru selesai saat semua sesinya dikonfirmasi.
 8. **Admin memutuskan sanggahan.** Masuk sebagai admin, buka **Keluhan**. Ada sanggahan Siti atas sesi Rina sebelumnya (jenis "Sanggahan sesi"). Pilih **Sesi sah** atau **Sesi tidak sah** dengan alasan. Kalau tidak sah, biaya sesi itu masuk **Pengembalian dana** untuk Siti dan Rina tidak dibayar untuk sesi itu.
-9. **Tutor mengajukan pencairan.** Masuk sebagai Andi, buka **Pendapatan**, ajukan pencairan sebesar saldo tersedia atau kurang. Dana ditahan tidak bisa dicairkan.
-10. **Admin menyetujui.** Sebagai admin, buka **Pencairan dana**, setujui pengajuan Andi (atau pengajuan Rina yang sudah menunggu), lalu tandai dibayar setelah transfer.
+9. **Tutor mengajukan pencairan.** Kembali sebagai Rina, buka **Pendapatan**, ajukan pencairan sebesar saldo tersedia atau kurang. Dana ditahan tidak bisa dicairkan.
+10. **Admin menyetujui.** Sebagai admin, buka **Pencairan dana**, setujui pengajuan Rina (pengajuan Yusuf juga sudah menunggu), lalu tandai dibayar setelah transfer.
 11. **Ulasan.** Sebagai Siti, buka pesanan yang selesai (mis. Matematika SD dengan Rina), beri nilai dan komentar.
 12. **Admin, lainnya.**
    - **Ringkasan:** komisi diakui per sesi yang dikonfirmasi pada periode itu, komisi ditahan, grafik, **Unduh CSV**, dan **Cetak**.
@@ -136,4 +160,7 @@ php artisan test tests/Feature/Pesanan
 ## Dokumentasi lain
 
 - [`docs/daftar-tabel.md`](docs/daftar-tabel.md): semua tabel dan kolom, ditandai mana yang dari ERD dan mana yang tambahan, beserta alasannya.
+- [`docs/arsitektur.md`](docs/arsitektur.md): ERD, diagram status pesanan, konfirmasi sesi, dan verifikasi tutor, diagram komponen, serta perbedaan dengan rancangan arsitektur target.
+- [`docs/skenario-presentasi.md`](docs/skenario-presentasi.md): naskah demo 12–15 menit beserta rencana cadangan.
+- [`docs/checklist-uji-manual.md`](docs/checklist-uji-manual.md): halaman dan aksi yang perlu dicek sendiri di HP dan desktop.
 - Kebijakan privasi dan syarat ketentuan ada di aplikasi: `/kebijakan-privasi` dan `/syarat-ketentuan`. Keduanya rancangan untuk tugas dan belum ditinjau ahli hukum.
