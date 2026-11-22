@@ -38,33 +38,35 @@
                     <dd class="border-b border-dotted border-pensil-muda font-tangan text-[1.2rem] leading-tight text-tinta">Matematika, IPA (SD dan SMP)</dd>
                 </dl>
 
-                <table class="mt-6 w-full border-collapse text-left text-[0.9375rem]">
-                    <caption class="sr-only">Dokumen yang diperiksa</caption>
-                    <thead>
-                        <tr class="border-y border-pensil">
-                            <th scope="col" class="py-2 pr-3 font-bold">Dokumen</th>
-                            <th scope="col" class="hidden py-2 pr-3 font-bold sm:table-cell">Yang diperiksa</th>
-                            <th scope="col" class="w-16 py-2 text-center font-bold">Sesuai</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($checks as $check)
-                            <tr class="border-b border-pensil/30 align-top">
-                                <th scope="row" class="py-3 pr-3 font-bold">
-                                    {{ $check['document'] }}
-                                    <span class="mt-1 block font-normal leading-snug text-pensil-muda sm:hidden">{{ $check['checked'] }}</span>
-                                </th>
-                                <td class="hidden py-3 pr-3 leading-snug sm:table-cell">{{ $check['checked'] }}</td>
-                                <td class="py-3">
-                                    <span class="mx-auto grid size-7 place-items-center border-[1.5px] border-pensil text-tinta">
-                                        <x-landing.tick class="size-6" />
-                                        <span class="sr-only">Ya</span>
-                                    </span>
-                                </td>
+                <div class="mt-6 overflow-x-auto">
+                    <table class="w-full border-collapse text-left text-[0.9375rem]">
+                        <caption class="sr-only">Dokumen yang diperiksa</caption>
+                        <thead>
+                            <tr class="border-y border-pensil">
+                                <th scope="col" class="py-2 pr-3 font-bold">Dokumen</th>
+                                <th scope="col" class="hidden py-2 pr-3 font-bold sm:table-cell">Yang diperiksa</th>
+                                <th scope="col" class="w-16 py-2 text-center font-bold">Sesuai</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach ($checks as $check)
+                                <tr class="border-b border-pensil/30 align-top">
+                                    <th scope="row" class="py-3 pr-3 font-bold">
+                                        {{ $check['document'] }}
+                                        <span class="mt-1 block font-normal leading-snug text-pensil-muda sm:hidden">{{ $check['checked'] }}</span>
+                                    </th>
+                                    <td class="hidden py-3 pr-3 leading-snug sm:table-cell">{{ $check['checked'] }}</td>
+                                    <td class="py-3">
+                                        <span class="mx-auto grid size-7 place-items-center border-[1.5px] border-pensil text-tinta">
+                                            <x-landing.tick class="size-6" />
+                                            <span class="sr-only">Ya</span>
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
                 <p class="mt-5 max-w-[26rem] text-[0.9375rem] leading-snug lg:max-w-[17rem]">
                     <span class="font-bold">Hasil:</span> berkas lengkap dan sesuai. Profil boleh tampil di pencarian EduLink Tutor.

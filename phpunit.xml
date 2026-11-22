@@ -20,9 +20,14 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="APP_LOCALE" value="id" force="true"/>
+        <server name="APP_LOCALE" value="id" force="true"/>
         <!-- Demo mode on for every test, whatever .env or the shell says; tests of demo mode off set it themselves. -->
         <env name="EDULINK_MODE_DEMO" value="true" force="true"/>
         <server name="EDULINK_MODE_DEMO" value="true" force="true"/>
+        <!-- Reset and activation links on screen, so tests can follow them; tests of it off set it themselves. -->
+        <env name="EDULINK_TAUTAN_DI_LAYAR" value="true" force="true"/>
+        <server name="EDULINK_TAUTAN_DI_LAYAR" value="true" force="true"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>

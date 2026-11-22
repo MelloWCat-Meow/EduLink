@@ -31,7 +31,7 @@ Centang kolom **HP** dan **Desktop** setelah dicek.
 | `/syarat-ketentuan` dan `/kebijakan-privasi`: daftar isi dan bagian konfirmasi sesi 48 jam | ☐ | ☐ |
 | `/masuk`, `/daftar`, lupa kata sandi, tombol tampilkan kata sandi | ☐ | ☐ |
 | `/daftar-tutor`: kelima langkah formulir, unggah dokumen | ☐ | ☐ |
-| `/aktivasi-tutor` dengan lestari.putri@edulink.test → tautan "Mode demo" | ☐ | ☐ |
+| `/aktivasi-tutor` dengan lestari.putri@edulink.test → tautan dari log (atau di layar kalau `EDULINK_TAUTAN_DI_LAYAR=true`) | ☐ | ☐ |
 | Halaman 404 (mis. `/tidak-ada`) | ☐ | ☐ |
 
 ## Orang tua: siti.aminah@edulink.test / orangtua123

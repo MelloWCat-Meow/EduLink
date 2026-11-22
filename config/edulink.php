@@ -6,6 +6,12 @@
 */
 $isi = fn (string $kunci): mixed => in_array(env($kunci), [null, ''], true) ? null : env($kunci);
 
+/*
+| A true/false switch: true/false, 1/0, on/off or yes/no. Empty, missing or
+| anything else gives $bawaan.
+*/
+$saklar = fn (string $kunci, bool $bawaan): bool => ($isi($kunci) === null ? null : filter_var($isi($kunci), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE)) ?? $bawaan;
+
 return [
 
     /*
@@ -24,8 +30,23 @@ return [
     |
     */
 
-    'mode_demo' => ($isi('EDULINK_MODE_DEMO') === null ? null : filter_var($isi('EDULINK_MODE_DEMO'), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE))
-        ?? in_array(env('APP_ENV', 'production'), ['local', 'testing'], true),
+    'mode_demo' => $saklar('EDULINK_MODE_DEMO', in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tautan di layar
+    |--------------------------------------------------------------------------
+    |
+    | With mode demo also on, the password reset and tutor activation links
+    | are shown on screen as well as emailed, for demos without a real inbox.
+    | Off by default (on only for testing): on a public URL such as ngrok,
+    | anyone could otherwise take over an account. A reset link for an admin
+    | account is never shown. When off, the links are still in the mail log
+    | (storage/logs/laravel.log with MAIL_MAILER=log).
+    |
+    */
+
+    'tautan_di_layar' => $saklar('EDULINK_TAUTAN_DI_LAYAR', env('APP_ENV') === 'testing'),
 
     /*
     | Shown in the landing and dashboard footers, so viewers know this is a

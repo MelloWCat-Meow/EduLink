@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\GantiKataSandiRequest;
 use App\Http\Requests\Auth\LupaKataSandiRequest;
 use App\Http\Requests\Auth\ResetKataSandiRequest;
 use App\Services\KataSandi;
+use App\Support\TautanDiLayar;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -32,7 +33,9 @@ class KataSandiController extends Controller
 
         $redirect = redirect()->route('password.request')->with('status', self::PESAN_TERKIRIM);
 
-        if ($url !== null && config('edulink.mode_demo')) {
+        // Demo only, and only with EDULINK_TAUTAN_DI_LAYAR on: there is no real
+        // inbox, so the link is shown on screen. Never for an admin account.
+        if ($url !== null && TautanDiLayar::aktif()) {
             $redirect->with('tautan_demo', $url);
         }
 

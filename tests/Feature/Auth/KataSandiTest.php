@@ -76,12 +76,34 @@ class KataSandiTest extends TestCase
         $this->assertSame(1, DB::table('password_reset_tokens')->where('kontak', 'siti@contoh.com')->count());
     }
 
-    public function test_mode_demo_shows_the_link_on_screen(): void
+    public function test_mode_demo_shows_the_link_on_screen_only_with_the_flag_on(): void
     {
-        config(['edulink.mode_demo' => true]);
-
+        config(['edulink.mode_demo' => true, 'edulink.tautan_di_layar' => true]);
         $this->post(route('password.email'), ['kontak' => 'siti@contoh.com'])->assertSessionHas('tautan_demo');
         $this->post(route('password.email'), ['kontak' => 'tidak.ada@contoh.com'])->assertSessionMissing('tautan_demo');
+
+        // Past the broker's one-request-a-minute limit, so a link is really sent again.
+        $this->travel(2)->minutes();
+        config(['edulink.tautan_di_layar' => false]);
+        $this->post(route('password.email'), ['kontak' => 'siti@contoh.com'])->assertSessionMissing('tautan_demo');
+        $this->get(route('password.request'))->assertDontSee('lupa-kata-sandi/', false);
+
+        // The link still goes out by email (the mail log in the demo).
+        Notification::assertSentToTimes($this->siti, TautanResetKataSandi::class, 2);
+    }
+
+    public function test_an_admin_reset_link_is_never_shown_on_screen(): void
+    {
+        config(['edulink.mode_demo' => true, 'edulink.tautan_di_layar' => true]);
+        $admin = AkunPengguna::factory()->admin()->create(['kontak' => 'admin@contoh.com']);
+
+        $this->post(route('password.email'), ['kontak' => 'admin@contoh.com'])
+            ->assertRedirect(route('password.request'))
+            ->assertSessionHas('status', KataSandiController::PESAN_TERKIRIM)
+            ->assertSessionMissing('tautan_demo');
+
+        // Sent by email like any other account, just not shown.
+        Notification::assertSentTo($admin, TautanResetKataSandi::class);
     }
 
     public function test_the_link_sets_a_new_password_once_and_ends_other_sessions(): void

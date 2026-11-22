@@ -67,16 +67,23 @@ class ModeDemoTest extends TestCase
         $this->assertSame('dibayar', $pesanan->refresh()->status->value);
     }
 
-    public function test_activation_link_is_shown_on_screen_only_in_demo_mode(): void
+    public function test_activation_link_is_shown_on_screen_only_in_demo_mode_with_the_flag_on(): void
     {
         Mail::fake();
         Tutor::factory()->internal()->draf()->create(['kontak' => 'lestari@contoh.com']);
 
-        config(['edulink.mode_demo' => false]);
+        config(['edulink.mode_demo' => false, 'edulink.tautan_di_layar' => true]);
         $this->post(route('tutor.aktivasi.store'), ['kontak' => 'lestari@contoh.com'])->assertSessionMissing('tautan_demo');
 
-        config(['edulink.mode_demo' => true]);
+        config(['edulink.mode_demo' => true, 'edulink.tautan_di_layar' => false]);
+        $this->post(route('tutor.aktivasi.store'), ['kontak' => 'lestari@contoh.com'])->assertSessionMissing('tautan_demo');
+        $this->get(route('tutor.aktivasi'))->assertDontSee('aktivasi-tutor/', false);
+
+        config(['edulink.mode_demo' => true, 'edulink.tautan_di_layar' => true]);
         $this->post(route('tutor.aktivasi.store'), ['kontak' => 'lestari@contoh.com'])->assertSessionHas('tautan_demo');
+
+        // Each request still emailed the link (to the mail log in the demo).
+        Mail::assertSentCount(3);
 
         $this->assertInstanceOf(AkunPengguna::class, new AkunPengguna);
     }
@@ -85,11 +92,11 @@ class ModeDemoTest extends TestCase
      * Reads config/edulink.php the way Laravel does at boot, with the given
      * EDULINK_MODE_DEMO and APP_ENV, then puts the process environment back.
      */
-    private function modeDemoDari(?string $nilai, string $appEnv): bool
+    private function modeDemoDari(?string $nilai, string $appEnv, string $variabel = 'EDULINK_MODE_DEMO', string $kunciConfig = 'mode_demo'): bool
     {
         $simpan = [];
 
-        foreach (['EDULINK_MODE_DEMO' => $nilai, 'APP_ENV' => $appEnv] as $kunci => $isi) {
+        foreach ([$variabel => $nilai, 'APP_ENV' => $appEnv] as $kunci => $isi) {
             $simpan[$kunci] = [$_SERVER[$kunci] ?? null, $_ENV[$kunci] ?? null, getenv($kunci)];
 
             if ($isi === null) {
@@ -102,7 +109,7 @@ class ModeDemoTest extends TestCase
         }
 
         try {
-            return (require config_path('edulink.php'))['mode_demo'];
+            return (require config_path('edulink.php'))[$kunciConfig];
         } finally {
             foreach ($simpan as $kunci => [$server, $env, $proses]) {
                 unset($_SERVER[$kunci], $_ENV[$kunci]);
@@ -147,5 +154,27 @@ class ModeDemoTest extends TestCase
     public function test_demo_mode_reads_the_env_value_or_falls_back_to_the_default(?string $nilai, string $appEnv, bool $harapan): void
     {
         $this->assertSame($harapan, $this->modeDemoDari($nilai, $appEnv));
+    }
+
+    /**
+     * @return array<string, array{0: ?string, 1: string, 2: bool}>
+     */
+    public static function nilaiTautanDiLayar(): array
+    {
+        return [
+            'tidak diisi di local' => [null, 'local', false],
+            'kosong di production' => ['', 'production', false],
+            'tidak diisi di testing' => [null, 'testing', true],
+            'true di local' => ['true', 'local', true],
+            'on di production' => ['on', 'production', true],
+            'false di testing' => ['false', 'testing', false],
+            'salah ketik jatuh ke default' => ['ya', 'local', false],
+        ];
+    }
+
+    #[DataProvider('nilaiTautanDiLayar')]
+    public function test_links_on_screen_are_off_by_default_except_in_testing(?string $nilai, string $appEnv, bool $harapan): void
+    {
+        $this->assertSame($harapan, $this->modeDemoDari($nilai, $appEnv, 'EDULINK_TAUTAN_DI_LAYAR', 'tautan_di_layar'));
     }
 }
