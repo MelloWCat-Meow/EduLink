@@ -50,7 +50,7 @@ class SiapkanDemo extends Command
         Storage::disk('local')->deleteDirectory(BerkasContoh::FOLDER);
 
         foreach ([
-            'Membuat ulang tabel dan data demo' => ['migrate:fresh', ['--seed' => true, '--force' => true]],
+            'Membuat ulang tabel dan data demo' => ['migrate:fresh', ['--seed' => true, '--drop-views' => true, '--force' => true]],
             'Membersihkan cache' => ['optimize:clear', []],
         ] as $langkah => [$perintah, $argumen]) {
             $berhasil = false;

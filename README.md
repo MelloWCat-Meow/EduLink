@@ -22,13 +22,23 @@ php artisan key:generate
 Buka `.env`, lalu isi koneksi database (`DB_CONNECTION=mysql`, `DB_DATABASE=edulink`, `DB_USERNAME`, `DB_PASSWORD`). Buat database kosong bernama `edulink`, kemudian:
 
 ```bash
-php artisan migrate:fresh --seed
+php artisan migrate:fresh --seed --drop-views
 php artisan storage:link
 npm install
 npm run build
 ```
 
 `migrate:fresh --seed` menghapus semua tabel lalu mengisinya dengan data demo. Jalankan ulang kapan saja untuk kembali ke kondisi awal demo. Tanggal dalam data demo selalu relatif terhadap hari ini.
+
+Sertakan `--drop-views` setiap kali menjalankan `migrate:fresh` secara manual. Database punya tiga view laporan, dan tanpa opsi itu `migrate:fresh` tidak menghapusnya. (`edulink:siapkan-demo` sudah menyertakannya.) Untuk melihat isi view dari klien SQL:
+
+```sql
+SELECT * FROM v_tingkat_keberhasilan_pembayaran;
+SELECT * FROM v_laporan_transaksi_harian ORDER BY tanggal;
+SELECT * FROM v_rating_tutor ORDER BY rata_rating DESC;
+```
+
+Daftar view dan check constraint ada di [docs/daftar-tabel.md](docs/daftar-tabel.md).
 
 ## Menjalankan
 
@@ -99,7 +109,7 @@ Sebelum presentasi, siapkan ulang data demo:
 php artisan edulink:siapkan-demo
 ```
 
-Perintah ini hanya berjalan di mode demo dan meminta konfirmasi, karena menghapus seluruh isi database. Isinya: `migrate:fresh --seed`, menghapus berkas dokumen tutor contoh yang lama, membersihkan cache, lalu mencetak akun demo dan alamat halaman penting. Tanggal di data demo dihitung dari saat perintah dijalankan, sehingga selalu ada sesi hari ini, tagihan yang masih punya sisa waktu bayar, dan sesi yang menunggu konfirmasi orang tua. Jalankan pada hari presentasi, sebaiknya sebelum pukul 22.00 (setelah itu sesi "hari ini" tidak dibuat).
+Perintah ini hanya berjalan di mode demo dan meminta konfirmasi, karena menghapus seluruh isi database. Isinya: `migrate:fresh --seed --drop-views`, menghapus berkas dokumen tutor contoh yang lama, membersihkan cache, lalu mencetak akun demo dan alamat halaman penting. Tanggal di data demo dihitung dari saat perintah dijalankan, sehingga selalu ada sesi hari ini, tagihan yang masih punya sisa waktu bayar, dan sesi yang menunggu konfirmasi orang tua. Jalankan pada hari presentasi, sebaiknya sebelum pukul 22.00 (setelah itu sesi "hari ini" tidak dibuat).
 
 Naskah demo langkah demi langkah ada di [docs/skenario-presentasi.md](docs/skenario-presentasi.md).
 

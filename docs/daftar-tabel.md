@@ -216,6 +216,31 @@ Relasi banyak-ke-banyak tutor dan mata pelajaran.
 | **password_reset_tokens** | kontak (PK), token, created_at | Token "Lupa kata sandi" (hash, berlaku 60 menit, sekali pakai), dengan kunci kontak supaya cocok dengan akun_pengguna. |
 | **sessions** | id, user_id (varchar 10), ip_address, user_agent, payload, last_activity | Sesi masuk (struktur bawaan Laravel); user_id berupa teks karena ID akun berbentuk AK0001. Dipakai juga untuk memutus sesi lain saat kata sandi diganti atau akun dinonaktifkan. |
 
+## Check constraint
+
+Dipasang oleh migration `2026_11_28_222542_add_check_constraints`, hanya di MySQL/MariaDB (SQLite yang dipakai test tidak bisa menambah constraint ke tabel yang sudah ada). Daftar status diambil dari enum di `app/Enums`, jadi selalu sama dengan kode. Validasi aplikasi tetap menjadi pemeriksaan pertama. Constraint ini menjaga supaya data yang ditulis dari luar aplikasi (klien SQL, impor) juga tidak bisa mustahil.
+
+| Tabel | Nama | Aturan | Kegunaan |
+|---|---|---|---|
+| rating_ulasan | chk_rating_nilai | `nilai BETWEEN 1 AND 5` | Rating bintang 1–5. |
+| jadwal_ketersediaan | chk_jadwal_status | status ∈ `StatusJadwal` (tersedia, ditahan, terisi, nonaktif) | Slot tidak bisa punya status yang tidak dikenal aplikasi. |
+| pesanan | chk_pesanan_status | status ∈ `StatusPesanan` (menunggu_konfirmasi_tutor, ditolak, menunggu_pembayaran, dibayar, selesai, batal) | Sama, untuk pesanan. |
+| pesanan | chk_pesanan_angka | `durasi > 0 AND jumlah_pertemuan > 0 AND tarif_per_jam > 0 AND total_biaya > 0` | Pesanan selalu punya durasi, jumlah pertemuan, dan biaya. Tarif tutor minimal Rp25.000, jadi tidak ada pesanan gratis. |
+| pembayaran | chk_pembayaran_status | status ∈ `StatusPembayaran` (pending, berhasil, gagal) | Status percobaan bayar. |
+| pembayaran | chk_pembayaran_jumlah | `jumlah > 0` | Jumlah bayar = total biaya pesanan. |
+| komisi_biaya_layanan | chk_komisi_angka | `persentase BETWEEN 0 AND 100 AND nominal >= 0` | Komisi 0% boleh, karena admin bisa menetapkan 0. |
+| profil_tutor | chk_profil_tarif | `tarif IS NULL OR tarif > 0` | Tarif kosong boleh, untuk tutor internal yang belum mengisi profil. Kalau diisi, harus positif. |
+
+## View laporan
+
+Dibuat oleh migration `2026_11_28_222543_create_report_views`, di MySQL/MariaDB dan SQLite. Aplikasi tidak membaca view ini. Halaman Ringkasan admin menghitung angkanya di `App\Services\LaporanRingkasan`. View disediakan untuk kueri langsung dan lampiran laporan. `migrate:fresh` perlu `--drop-views` supaya view ikut terhapus.
+
+| View | Isi | Kegunaan |
+|---|---|---|
+| v_laporan_transaksi_harian | Per `tanggal` (= `DATE(pembayaran.diproses_pada)`), hanya pembayaran berstatus berhasil: `jumlah_pembayaran`, `total_pembayaran` (SUM jumlah), `total_komisi` (SUM `komisi_biaya_layanan.nominal` pesanan yang dibayar) | Laporan transaksi harian. Jumlah dan total transaksi per bulan sama dengan "Transaksi berhasil" di halaman Ringkasan. `total_komisi` adalah komisi yang **ditetapkan saat pesanan dibayar**, bukan "Pendapatan komisi" di Ringkasan. Ringkasan mengakui komisi per sesi pada bulan sesi itu dikonfirmasi, jadi kedua angka bisa berbeda per bulan, tapi totalnya sama setelah semua sesi dikonfirmasi. |
+| v_rating_tutor | Per tutor: `id_tutor`, `nama`, `rata_rating` (AVG nilai), `jumlah_ulasan`, hanya ulasan yang `ditampilkan` | Peringkat tutor. Aturannya sama dengan scope `Tutor::denganRating()` (ulasan yang disembunyikan admin tidak dihitung). Tutor tanpa ulasan tetap muncul dengan rata-rata NULL dan jumlah 0. |
+| v_tingkat_keberhasilan_pembayaran | Satu baris: `total_percobaan`, `jumlah_berhasil`, `jumlah_gagal`, `jumlah_pending`, `persen_berhasil` (berhasil ÷ total × 100, 2 desimal, NULL kalau belum ada percobaan) | Tingkat keberhasilan pembayaran. Setiap baris pembayaran dihitung sebagai satu percobaan, termasuk yang masih pending. |
+
 ## Tabel bawaan Laravel (tidak memuat data bisnis)
 
 cache, cache_locks, jobs, job_batches, failed_jobs, migrations.
